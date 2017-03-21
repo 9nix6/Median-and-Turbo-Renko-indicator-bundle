@@ -82,6 +82,7 @@ input int MR_DonchianPeriod = 20; // Donchan Channel period
 input BufferDataType MR_BBapplyTo = Close; //Bollinger Bands apply to
 input int MR_BollingerBandsPeriod = 20; // Bollinger Bands period
 input double MR_BollingerBandsDeviations = 2.0; // Bollinger Bands deviations
+//input string MR_Misc_Settings = "--------------------------";
       bool MR_UsedInEA = true;
 
 //
@@ -128,6 +129,7 @@ int InitMedianRenko(string symbol)
                                        MR_BBapplyTo,
                                        MR_BollingerBandsPeriod,
                                        MR_BollingerBandsDeviations,
+                                     //  "",
                                        MR_UsedInEA);
   
     
@@ -159,7 +161,10 @@ void DeinitMedianRenko()
 //
 // Function for detecting a new Renko bar
 //
-
+/*
+// 
+// Function not valid - quick bars can have same open time
+//
 bool IsNewRenkoBar()
 {
     double currentRenkoOpen[1];
@@ -174,6 +179,29 @@ bool IsNewRenkoBar()
     }
 
     return false;
+}
+*/
+
+bool IsNewRenkoBar()
+{
+   MqlRates currentRenko[1];
+   static MqlRates prevRenko;
+   
+   GetRenkoMqlRates(currentRenko,1,1);
+   
+   if((prevRenko.open != currentRenko[0].open) ||
+      (prevRenko.high != currentRenko[0].high) ||
+      (prevRenko.low != currentRenko[0].low) ||
+      (prevRenko.close != currentRenko[0].close))
+   {
+      prevRenko.open = currentRenko[0].open;
+      prevRenko.high = currentRenko[0].high;
+      prevRenko.low = currentRenko[0].low;
+      prevRenko.close = currentRenko[0].close;
+      return true;
+   }
+   
+   return false;
 }
 
 //
