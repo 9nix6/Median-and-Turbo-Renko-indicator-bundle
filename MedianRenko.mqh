@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                         MedianRenko.mqh ver:1.44 |
+//|                                         MedianRenko.mqh ver:1.45 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -82,7 +82,7 @@ input int MR_DonchianPeriod = 20; // Donchan Channel period
 input BufferDataType MR_BBapplyTo = Close; //Bollinger Bands apply to
 input int MR_BollingerBandsPeriod = 20; // Bollinger Bands period
 input double MR_BollingerBandsDeviations = 2.0; // Bollinger Bands deviations
-//input string MR_Misc_Settings = "--------------------------";
+input string MR_Misc_Settings = "--------------------------";
       bool MR_UsedInEA = true;
 
 //
@@ -129,7 +129,7 @@ int InitMedianRenko(string symbol)
                                        MR_BBapplyTo,
                                        MR_BollingerBandsPeriod,
                                        MR_BollingerBandsDeviations,
-                                     //  "",
+                                       "",
                                        MR_UsedInEA);
   
     
