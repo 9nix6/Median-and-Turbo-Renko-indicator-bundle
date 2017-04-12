@@ -1,7 +1,7 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.00"
-#property description "Example EA showing the way to use functions from MedianRenko.mqh" 
+#property version   "2.00"
+#property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -10,18 +10,26 @@
 #include "MedianRenko.mqh"
 
 //
-//  To use the MedainRenko indicator in your EA you need do initialize the indicator by calling
-//  the InitMedianRenko(string symbol) function in your EA's Init() function.
-//  Don't forget to release the indicator when you're done by calling the DeinitMedianRenko() function.
-//  Example shown in OnInit & OnDeinit functions shown below:
+//  To use the MedainRenko indicator in your EA you need do instantiate the indicator class (MedianRenko)
+//  and call the Init() method in your EA's OnInit() function.
+//  Don't forget to release the indicator when you're done by calling the Deinit() method.
+//  Example shown in OnInit & OnDeinit functions below:
 //
+
+MedianRenko * medianRenko;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   InitMedianRenko(_Symbol);   
+   medianRenko = new MedianRenko(); 
+   if(medianRenko == NULL)
+      return(INIT_FAILED);
+   
+   medianRenko.Init();
+   if(medianRenko.GetHandle() == INVALID_HANDLE)
+      return(INIT_FAILED);
    
    //
    //  your custom code goes here...
@@ -34,15 +42,19 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   DeinitMedianRenko();
-
+   if(medianRenko != NULL)
+   {
+      medianRenko.Deinit();
+      delete medianRenko;
+   }
+   
    //
    //  your custom code goes here...
    //
 }
 
 //
-//  At this point you may use the renko data fetching functions in your EA.
+//  At this point you may use the renko data fetching methods in your EA.
 //  Brief demonstration presented below in the OnTick() function:
 //
 
@@ -54,13 +66,13 @@ void OnTick()
    //
    // It is considered good trading & EA coding practice to perform calculations
    // when a new bar is fully formed. 
-   // The IsNewRenkoBar() function is used for checking if a new renko bar has formed 
+   // The IsNewBar() method is used for checking if a new renko bar has formed 
    //
 
-   if(IsNewRenkoBar())
+   if(medianRenko.IsNewBar())
    {
       //
-      //  There are two functions for getting the Moving Average values.
+      //  There are two methods for getting the Moving Average values.
       //  The example below gets the moving average values for 3 latest bars
       //  counting to the left from the most current (uncompleted) bar.
       //
@@ -75,7 +87,7 @@ void OnTick()
       double MA1[]; // array to be filled by values of the first moving average
       double MA2[]; // array to be filled by values of the second moving average
       
-      if(GetRenkoMA1(MA1,startAtBar,numberOfBars) && GetRenkoMA2(MA2,startAtBar,numberOfBars))
+      if(medianRenko.GetMA1(MA1,startAtBar,numberOfBars) && medianRenko.GetMA1(MA2,startAtBar,numberOfBars))
       {
          //
          // Values are stored in the MA1 and MA2 arrays and are now ready for use
@@ -90,15 +102,15 @@ void OnTick()
       
       //
       // Getting the MqlRates info for renko bars is done using the
-      // GetRenkoMqlRates(MqlRates &ratesInfoArray[], int start, int count) 
-      // function. Example below:
+      // GetMqlRates(MqlRates &ratesInfoArray[], int start, int count) 
+      // method. Example below:
       //
       
       MqlRates RenkoRatesInfoArray[];  // This array will store the MqlRates data for renkos
       startAtBar = 1;                  // get values starting from the last completed bar.
       numberOfBars = 2;                // gat a total of 2 MqlRates values (for 2 bars starting from bar 1 (last completed))
       
-      if(GetRenkoMqlRates(RenkoRatesInfoArray,startAtBar,numberOfBars))
+      if(medianRenko.GetMqlRates(RenkoRatesInfoArray,startAtBar,numberOfBars))
       {
          //
          //  Check if a renko reversal bar has formed
@@ -118,8 +130,8 @@ void OnTick()
       
       //
       // Getting Donchain channel values is done using the
-      // GetRenkoDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
-      // function. Example below:
+      // GetDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
+      // method. Example below:
       //
       
       double HighArray[];  // This array will store the values of the high band
@@ -128,7 +140,7 @@ void OnTick()
       startAtBar = 1;      // get values starting from the last completed bar.
       numberOfBars = 20;   // gat a total of 20 values (for 20 bars starting from bar 1 (last completed))
       
-      if(GetRenkoDonchian(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
+      if(medianRenko.GetDonchian(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
       {
          //
          // Apply your Donchian channel logic here...
@@ -137,8 +149,8 @@ void OnTick()
       
       //
       // Getting Bollinger Bands values is done using the
-      // GetRenkoBollingerBands(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
-      // function. Example below:
+      // GetBollingerBands(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
+      // method. Example below:
       //
       
       // HighArray[] array will store the values of the high band
@@ -148,7 +160,7 @@ void OnTick()
       startAtBar = 1;      // get values starting from the last completed bar.
       numberOfBars = 10;   // gat a total of 10 values (for 10 bars starting from bar 1 (last completed))     
       
-      if(GetRenkoBollingerBands(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
+      if(medianRenko.GetBollingerBands(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
       {
          //
          // Apply your Bollinger Bands logic here...
