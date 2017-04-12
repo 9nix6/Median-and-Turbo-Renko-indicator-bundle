@@ -7,9 +7,11 @@ The created EA will automatically acquire the settings used on the Renko chart i
 
 **MedianRenkoSettings.mqh** - This header file is used by the **MedianRenko** class to automatically read the EA settings used on the Renko chart where the EA should be attached.
 
-Both header files should be placed in the **MQL5\include** subfolder of your Metatrader's Data Folder.
-
 **ExampleEA.mq5** - An example EA skeleton showing the use of methods included in the MedianRenko class library
+
+## Installation
+
+All folders with header files & EA should be placed in the **MQL5** sub-folder of your Metatrader's Data Folder.
 
 ## Resources
 The robust Renko indicator for MT5 can be downloaded from: https://www.mql5.com/en/market/product/16347
