@@ -7,7 +7,7 @@
 // You need to include the MedianRenko.mqh header file
 //
 
-#include "MedianRenko.mqh"
+#include <MedianRenko.mqh>
 
 //
 //  To use the MedainRenko indicator in your EA you need do instantiate the indicator class (MedianRenko)
