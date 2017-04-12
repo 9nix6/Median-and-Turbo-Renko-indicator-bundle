@@ -1,5 +1,6 @@
 # MedianRenko.mqh
-MQL5 header file for 'Median and Turbo renko indicator bundle' available for MT5 via MQL5 Market. The library file simplifies the use of the MT5 MedianRenko indicator when creating a Renko EA for MT5.
+MQL5 header file for 'Median and Turbo renko indicator bundle' available for MT5 via MQL5 Market. The class library file simplifies the use of the MT5 MedianRenko indicator when creating a Renko EA for MT5.
+The created EA will automatically aquire the settigns used on the Renko chart it is applied to, so it is no longer required to clone the indicator's settings used on the chart to the renko settigns that should be used in the EA.
 
 ## The files
 **MedianRenko.mqh** - The header file for including in the EA code. It contains the definition and implementation of the MedianRenko class
