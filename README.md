@@ -7,6 +7,8 @@ The created EA will automatically acquire the settings used on the Renko chart i
 
 **MedianRenkoSettings.mqh** - This header file is used by the **MedianRenko** class to automatically read the EA settings used on the Renko chart where the EA should be attached.
 
+**MedianRenkoIndicator.mqh** - This helper header file includes a **MedianRenkoIndicator** class which is used to patch MQL5 indicators to work directly on the Renko charts and use the Renko OLHC values for calculation.
+
 **ExampleEA.mq5** - An example EA skeleton showing the use of methods included in the MedianRenko class library
 
 ## Installation
