@@ -1,7 +1,17 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.00"
+#property version   "2.01"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
+
+//
+// SHOW_INDICATOR_INPUTS *NEEDS* to be defined, if the EA needs to be *tested in MT5's backtester*
+// -------------------------------------------------------------------------------------------------
+// Using '#define SHOW_INDICATOR_INPUTS' will show the MedianRenko indicator's inputs 
+// NOT using the '#define SHOW_INDICATOR_INPUTS' statement will read the settigns a chart with 
+// the MedianRenko indicator attached.
+//
+
+#define SHOW_INDICATOR_INPUTS
 
 //
 // You need to include the MedianRenko.mqh header file

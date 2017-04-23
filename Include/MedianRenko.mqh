@@ -48,6 +48,9 @@ class MedianRenko
       int GetHandle(void) { return medianRenkoHandle; };
       bool GetMqlRates(MqlRates &ratesInfoArray[], int start, int count);
       int GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[], int start, int count);
+      int GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count);
+      double CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE applied_price);
+      double CalcAppliedPrice(const double &o,const double &l,const double &h,const double &c,ENUM_APPLIED_PRICE applied_price);
       bool GetMA1(double &MA[], int start, int count);
       bool GetMA2(double &MA[], int start, int count);
       bool GetDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
@@ -314,6 +317,69 @@ int MedianRenko::GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],dou
 }
 
 //
+// Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
+//
+
+int MedianRenko::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count)
+{
+   if(ArrayResize(o,count) == -1)
+      return false;
+
+   int _count = CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,count,o);
+   if(_count == -1)
+      return _count;
+
+
+   if(ArrayResize(o,_count) == -1)
+      return -1;
+   if(ArrayResize(l,_count) == -1)
+      return -1;
+   if(ArrayResize(h,_count) == -1)
+      return -1;
+   if(ArrayResize(c,_count) == -1)
+      return -1;
+   if(ArrayResize(price,_count) == -1)
+      return -1;
+  
+   if(CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,_count,o) == -1)
+      return -1;
+   if(CopyBuffer(medianRenkoHandle,RENKO_LOW,start,_count,l) == -1)
+      return -1;
+   if(CopyBuffer(medianRenkoHandle,RENKO_HIGH,start,_count,h) == -1)
+      return -1;
+   if(CopyBuffer(medianRenkoHandle,RENKO_CLOSE,start,_count,c) == -1)
+      return -1;
+   
+   if(applied_price == PRICE_CLOSE) 
+   {
+      if(CopyBuffer(medianRenkoHandle,RENKO_CLOSE,start,_count,price) == -1)
+         return -1;
+   }
+   else if(applied_price == PRICE_OPEN) 
+   {
+      if(CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,_count,price) == -1)
+         return -1;
+   }
+   else if(applied_price == PRICE_HIGH) 
+   {
+      if(CopyBuffer(medianRenkoHandle,RENKO_HIGH,start,_count,price) == -1)
+         return -1;
+   }
+   else if(applied_price == PRICE_LOW) 
+   {
+      if(CopyBuffer(medianRenkoHandle,RENKO_LOW,start,_count,price) == -1)
+         return -1;
+   }
+   else
+   {       
+      for(int i=0; i<_count; i++)
+         price[i] = CalcAppliedPrice(o[i],l[i],h[i],c[i],applied_price);
+   }
+   
+   return _count;
+}
+
+//
 // Get "count" MovingAverage1 values into "MA[]" array starting from "start" bar  
 //
 
@@ -423,4 +489,48 @@ bool MedianRenko::GetChannel(double &HighArray[], double &MidArray[], double &Lo
    ArrayFree(tempL);
    
    return true;
+}
+
+//
+//  Function used for calculating the Apllied Price based on Renko OLHC values
+//
+
+double MedianRenko::CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE applied_price)
+{
+      if(applied_price == PRICE_CLOSE)
+         return _rates.close;
+      else if (MA1applyTo == PRICE_OPEN)
+         return _rates.open;
+      else if (MA1applyTo == PRICE_HIGH)
+         return _rates.high;
+      else if (MA1applyTo == PRICE_LOW)
+         return _rates.low;
+      else if (MA1applyTo == PRICE_MEDIAN)
+         return (_rates.high + _rates.low) / 2;
+      else if (MA1applyTo == PRICE_TYPICAL)
+         return (_rates.high + _rates.low + _rates.close) / 3;
+      else if (MA1applyTo == PRICE_WEIGHTED)
+         return (_rates.high + _rates.low + _rates.close + _rates.close) / 4;
+         
+      return 0.0;
+}
+
+double MedianRenko::CalcAppliedPrice(const double &o,const double &l,const double &h,const double &c, ENUM_APPLIED_PRICE applied_price)
+{
+      if(applied_price == PRICE_CLOSE)
+         return c;
+      else if (MA1applyTo == PRICE_OPEN)
+         return o;
+      else if (MA1applyTo == PRICE_HIGH)
+         return h;
+      else if (MA1applyTo == PRICE_LOW)
+         return l;
+      else if (MA1applyTo == PRICE_MEDIAN)
+         return (h + l) / 2;
+      else if (MA1applyTo == PRICE_TYPICAL)
+         return (h + l + c) / 3;
+      else if (MA1applyTo == PRICE_WEIGHTED)
+         return (h + l + c +c) / 4;
+         
+      return 0.0;
 }

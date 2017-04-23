@@ -200,8 +200,11 @@ void MedianRenkoSettings::Save(void)
    settings.SuperTrendPeriod = SuperTrendPeriod;
    settings.SuperTrendMultiplier = SuperTrendMultiplier;
       
+   if(MQLInfoInteger((int)MQL5_TESTING))
+      return;
+
    this.Delete();
-   
+
    int handle = FileOpen(this.settingsFileName,FILE_SHARE_READ|FILE_WRITE|FILE_BIN);  
    FileWriteStruct(handle,this.settings);
    FileClose(handle);
@@ -215,6 +218,10 @@ void MedianRenkoSettings::Delete(void)
 
 bool MedianRenkoSettings::Load(void)
 {
+#ifdef SHOW_INDICATOR_INPUTS
+   return true;
+#else 
+
    if(!FileIsExist(this.settingsFileName))
       return false;
       
@@ -232,6 +239,8 @@ bool MedianRenkoSettings::Load(void)
    this.Debug();
    FileClose(handle);
    return true;
+
+#endif 
 }
 
 MEDIANRENKO_SETTINGS MedianRenkoSettings::Get(void)
@@ -241,6 +250,9 @@ MEDIANRENKO_SETTINGS MedianRenkoSettings::Get(void)
 
 bool MedianRenkoSettings::Changed(void)
 {
+   if(MQLInfoInteger((int)MQL5_TESTING))
+      return false;
+      
    static datetime prevFileTime = 0;
 
    if(!FileIsExist(this.settingsFileName))
