@@ -1,8 +1,9 @@
 //+------------------------------------------------------------------+
-//|                                          MedianRenkoSettings.mqh |
+//|                                 MedianRenkoSettings.mqh ver 1.02 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
+
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
  
@@ -71,17 +72,27 @@ enum ENUM_CHANNEL_TYPE
    datetime _startFromDateTime = 0;   
    bool  resetOpenOnNewTradingDay;
    
-   bool  showNextBarLevels = false;
-   color HighThresholdIndicatorColor = clrNONE;
-   color LowThresholdIndicatorColor = clrNONE;
-   bool  showCurrentBarOpenTime = false;
-   color InfoTextColor = clrNONE;
-   bool      UseSoundSignalOnNewBar = false;
-   bool      OnlySignalReversalBars = false;
-   bool      UseAlertWindow = false;
-   bool      SendPushNotifications = false;
-   string    SoundFileBull = "";
-   string    SoundFileBear = "";
+   //
+   //  This block should always be set to the follwong values
+   //
+   
+      bool  showNextBarLevels = false;
+      color HighThresholdIndicatorColor = clrNONE;
+      color LowThresholdIndicatorColor = clrNONE;
+      bool  showCurrentBarOpenTime = false;
+      color InfoTextColor = clrNONE;
+      bool      UseSoundSignalOnNewBar = false;
+      bool      OnlySignalReversalBars = false;
+      bool      UseAlertWindow = false;
+      bool      SendPushNotifications = false;
+      string    SoundFileBull = "";
+      string    SoundFileBear = "";
+
+      bool UsedInEA = true; // This should always be set to TRUE for EAs & Indicators
+   
+   //
+   //
+   //
    
    bool MA1on;
    int MA1period;
@@ -103,8 +114,6 @@ enum ENUM_CHANNEL_TYPE
    int SuperTrendPeriod = 10;
    double SuperTrendMultiplier=1.7;
       
-   bool UsedInEA = true;
-
 #endif
 
 struct MEDIANRENKO_SETTINGS
@@ -165,7 +174,8 @@ class MedianRenkoSettings
 
 void MedianRenkoSettings::MedianRenkoSettings(void)
 {
-   this.settingsFileName = "MedianRenko"+(string)ChartID()+".set";
+   this.settingsFileName = "MedianRenko"+(string)ChartID()+".set";   
+ 
 }
 
 void MedianRenkoSettings::~MedianRenkoSettings(void)
@@ -219,6 +229,30 @@ void MedianRenkoSettings::Delete(void)
 bool MedianRenkoSettings::Load(void)
 {
 #ifdef SHOW_INDICATOR_INPUTS
+   this.settings.barSizeInTicks = barSizeInTicks;
+   this.settings._retracementFactor = retracementFactor;
+   this.settings.useTickVolume = useTickVolume;
+   this.settings.symetricalReversals = symetricalReversals;
+   this.settings.showWicks = showWicks;
+   this.settings._startFromDateTime = startFromDateTime;
+   this.settings.resetOpenOnNewTradingDay = resetOpenOnNewTradingDay;
+   this.settings.MA1on = MA1on;
+   this.settings.MA1period = MA1period;
+   this.settings.MA1method = MA1method;
+   this.settings.MA1applyTo = MA1applyTo;
+   this.settings.MA1shift = MA1shift;
+   this.settings.MA2on = MA2on;
+   this.settings.MA2period = MA2period;
+   this.settings.MA2method = MA2method;
+   this.settings.MA2applyTo = MA2applyTo;
+   this.settings.MA2shift = MA2shift;
+   this.settings.ShowChannel = ShowChannel;
+   this.settings.DonchianPeriod = DonchianPeriod;
+   this.settings.BBapplyTo = BBapplyTo;
+   this.settings.BollingerBandsPeriod = BollingerBandsPeriod;
+   this.settings.BollingerBandsDeviations = BollingerBandsDeviations;
+   this.settings.SuperTrendPeriod = SuperTrendPeriod;
+   this.settings.SuperTrendMultiplier = SuperTrendMultiplier;
    return true;
 #else 
 
@@ -236,7 +270,7 @@ bool MedianRenkoSettings::Load(void)
       return false;
    }
    
-   this.Debug();
+  // this.Debug();
    FileClose(handle);
    return true;
 
@@ -245,6 +279,7 @@ bool MedianRenkoSettings::Load(void)
 
 MEDIANRENKO_SETTINGS MedianRenkoSettings::Get(void)
 {
+   this.Debug();
    return this.settings;
 }
 
@@ -298,4 +333,7 @@ void MedianRenkoSettings::Debug(void)
    Print("BBdeviations = "+(string)settings.BollingerBandsDeviations);
    Print("SuperTrendPeriod = "+(string)settings.SuperTrendPeriod);
    Print("SuperTrendMultiplier = "+(string)settings.SuperTrendMultiplier);
+
+   Print("UsedInEA = "+(string)UsedInEA);
+   
 }

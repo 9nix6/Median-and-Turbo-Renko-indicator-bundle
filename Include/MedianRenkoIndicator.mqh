@@ -6,7 +6,7 @@
 #property library
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.11"
+#property version   "1.10"
 #include <MedianRenko.mqh>
 
 class MedianRenkoIndicator

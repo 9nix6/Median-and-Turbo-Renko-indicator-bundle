@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.01"
+#property version   "2.02"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -78,7 +78,7 @@ void OnTick()
    // when a new bar is fully formed. 
    // The IsNewBar() method is used for checking if a new renko bar has formed 
    //
-
+   
    if(medianRenko.IsNewBar())
    {
       //

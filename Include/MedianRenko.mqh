@@ -90,26 +90,35 @@ MedianRenko::~MedianRenko(void)
 
 int MedianRenko::Init()
 {
-   if(!medianRenkoSettings.Load())
+   if(!MQLInfoInteger((int)MQL5_TESTING))
    {
+      if(!medianRenkoSettings.Load())
+      {
+         if(medianRenkoHandle != INVALID_HANDLE)
+         {
+            // could not read new settings - keep old settings
+            
+            return medianRenkoHandle;
+         }
+         else
+         {
+            Print("Failed to load indicator settings.");
+            Alert("You need to put the Median Renko indicator on your chart first!");
+            return INVALID_HANDLE;
+         }
+      }   
+      
       if(medianRenkoHandle != INVALID_HANDLE)
-      {
-         // could not read new settings - keep old settings
-         
-         return medianRenkoHandle;
-      }
-      else
-      {
-         Print("Failed to load indicator settings.");
-         Alert("You need to put the Median Renko indicator on your chart first!");
-         return INVALID_HANDLE;
-      }
+         Deinit();
+
+   }
+   else
+   {
+      medianRenkoSettings.Save();
    }   
-   
-   if(medianRenkoHandle != INVALID_HANDLE)
-      Deinit();
-   
-   MEDIANRENKO_SETTINGS s = medianRenkoSettings.Get();
+
+   MEDIANRENKO_SETTINGS s = medianRenkoSettings.Get();         
+
    //medianRenkoSettings.Debug();
    
    medianRenkoHandle = iCustom(this.medianRenkoSymbol,PERIOD_M1,RENKO_INDICATOR_NAME, 
@@ -150,8 +159,7 @@ int MedianRenko::Init()
                                        s.SuperTrendMultiplier,
                                        "",
                                        UsedInEA);
-  
-    
+      
     if(medianRenkoHandle == INVALID_HANDLE)
     {
       Print("Median Renko indicator init failed on error ",GetLastError());
@@ -373,8 +381,11 @@ int MedianRenko::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],dou
    else
    {       
       for(int i=0; i<_count; i++)
+      {
          price[i] = CalcAppliedPrice(o[i],l[i],h[i],c[i],applied_price);
+      }
    }
+   
    
    return _count;
 }
@@ -499,17 +510,17 @@ double MedianRenko::CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE 
 {
       if(applied_price == PRICE_CLOSE)
          return _rates.close;
-      else if (MA1applyTo == PRICE_OPEN)
+      else if (applied_price == PRICE_OPEN)
          return _rates.open;
-      else if (MA1applyTo == PRICE_HIGH)
+      else if (applied_price == PRICE_HIGH)
          return _rates.high;
-      else if (MA1applyTo == PRICE_LOW)
+      else if (applied_price == PRICE_LOW)
          return _rates.low;
-      else if (MA1applyTo == PRICE_MEDIAN)
+      else if (applied_price == PRICE_MEDIAN)
          return (_rates.high + _rates.low) / 2;
-      else if (MA1applyTo == PRICE_TYPICAL)
+      else if (applied_price == PRICE_TYPICAL)
          return (_rates.high + _rates.low + _rates.close) / 3;
-      else if (MA1applyTo == PRICE_WEIGHTED)
+      else if (applied_price == PRICE_WEIGHTED)
          return (_rates.high + _rates.low + _rates.close + _rates.close) / 4;
          
       return 0.0;
@@ -519,18 +530,18 @@ double MedianRenko::CalcAppliedPrice(const double &o,const double &l,const doubl
 {
       if(applied_price == PRICE_CLOSE)
          return c;
-      else if (MA1applyTo == PRICE_OPEN)
+      else if (applied_price == PRICE_OPEN)
          return o;
-      else if (MA1applyTo == PRICE_HIGH)
+      else if (applied_price == PRICE_HIGH)
          return h;
-      else if (MA1applyTo == PRICE_LOW)
+      else if (applied_price == PRICE_LOW)
          return l;
-      else if (MA1applyTo == PRICE_MEDIAN)
+      else if (applied_price == PRICE_MEDIAN)
          return (h + l) / 2;
-      else if (MA1applyTo == PRICE_TYPICAL)
+      else if (applied_price == PRICE_TYPICAL)
          return (h + l + c) / 3;
-      else if (MA1applyTo == PRICE_WEIGHTED)
+      else if (applied_price == PRICE_WEIGHTED)
          return (h + l + c +c) / 4;
-         
+      
       return 0.0;
 }
