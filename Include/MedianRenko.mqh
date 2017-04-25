@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                         MedianRenko.mqh ver:1.46 |
+//|                                       MedianRenko.mqh ver:1.46.4 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -114,7 +114,17 @@ int MedianRenko::Init()
    }
    else
    {
-      medianRenkoSettings.Save();
+      #ifdef SHOW_INDICATOR_INPUTS
+         //
+         //  Load settings from EA inputs
+         //
+         medianRenkoSettings.Load();
+      #else
+         //
+         //  Save indicator inputs for use by EA attached to same chart.
+         //
+         medianRenkoSettings.Save();
+      #endif
    }   
 
    MEDIANRENKO_SETTINGS s = medianRenkoSettings.Get();         

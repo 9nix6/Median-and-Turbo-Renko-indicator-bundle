@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                 MedianRenkoSettings.mqh ver 1.02 |
+//|                                 MedianRenkoSettings.mqh ver 1.03 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -230,11 +230,11 @@ bool MedianRenkoSettings::Load(void)
 {
 #ifdef SHOW_INDICATOR_INPUTS
    this.settings.barSizeInTicks = barSizeInTicks;
-   this.settings._retracementFactor = retracementFactor;
+   this.settings._retracementFactor = _retracementFactor;
    this.settings.useTickVolume = useTickVolume;
    this.settings.symetricalReversals = symetricalReversals;
    this.settings.showWicks = showWicks;
-   this.settings._startFromDateTime = startFromDateTime;
+   this.settings._startFromDateTime = _startFromDateTime;
    this.settings.resetOpenOnNewTradingDay = resetOpenOnNewTradingDay;
    this.settings.MA1on = MA1on;
    this.settings.MA1period = MA1period;
