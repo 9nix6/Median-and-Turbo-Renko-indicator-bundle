@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.02"
+#property version   "2.03"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -174,6 +174,26 @@ void OnTick()
       {
          //
          // Apply your Bollinger Bands logic here...
+         //
+      } 
+
+      //
+      // Getting SuperTrend values is done using the
+      // GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count) 
+      // method. Example below:
+      //
+      
+      // HighArray[] array will store the values of the high SuperTrend line
+      // MidArray[] array will store the values of the SuperTrend value
+      // LowArray[] array will store the values of the low SuperTrend line
+      
+      startAtBar = 1;      // get values starting from the last completed bar.
+      numberOfBars = 3;   // gat a total of 3 values (for 3 bars starting from bar 1 (last completed))     
+      
+      if(medianRenko.GetSuperTrend(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
+      {
+         //
+         // Apply your SuperTrend logic here...
          //
       } 
       

@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                       MedianRenko.mqh ver:1.46.4 |
+//|                                       MedianRenko.mqh ver:1.46.5 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -55,7 +55,7 @@ class MedianRenko
       bool GetMA2(double &MA[], int start, int count);
       bool GetDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
       bool GetBollingerBands(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
-           
+      bool GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count); 
       bool IsNewBar();
       
    private:
@@ -467,6 +467,16 @@ bool MedianRenko::GetBollingerBands(double &HighArray[], double &MidArray[], dou
 {
    return GetChannel(HighArray,MidArray,LowArray,start,count);
 }
+
+//
+// Get "count" SuperTrend values into "HighArray[]", "MidArray[]", and "LowArray[]" arrays starting from "start" bar  
+//
+
+bool MedianRenko::GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count)
+{
+   return GetChannel(SuperTrendHighArray,SuperTrendArray,SuperTrendLowArray,start,count);
+}
+
 
 //
 // Private function used by GetRenkoDonchian and GetRenkoBollingerBands functions to get data
