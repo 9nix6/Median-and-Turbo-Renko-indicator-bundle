@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                 MedianRenkoSettings.mqh ver 1.03 |
+//|                                 MedianRenkoSettings.mqh ver 1.04 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -51,7 +51,7 @@ enum ENUM_CHANNEL_TYPE
    input int MA2shift = 0; //2nd MA shift
    input ENUM_CHANNEL_TYPE ShowChannel = None; // Show Channel
    input string Channel_Settings = "--------------------------"; // Channel settings 
-   input int DonchianPeriod = 20; // Donchan Channel period
+   input int DonchianPeriod = 20; // Donchian Channel period
    input ENUM_APPLIED_PRICE BBapplyTo = PRICE_CLOSE; //Bollinger Bands apply to
    input int BollingerBandsPeriod = 20; // Bollinger Bands period
    input double BollingerBandsDeviations = 2.0; // Bollinger Bands deviations
