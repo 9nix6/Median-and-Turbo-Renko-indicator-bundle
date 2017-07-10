@@ -14,6 +14,9 @@ The created EA will automatically acquire the settings used on the Renko chart i
 ## Installation
 
 All folders with header files & EA should be placed in the **MQL5** sub-folder of your Metatrader's Data Folder.
+This short video will walk you through the installation process: 
+
+[![Installing the renko SDK](http://img.youtube.com/vi/cKZKoUMrMQE/0.jpg)](http://www.youtube.com/watch?v=cKZKoUMrMQE)
 
 ## Resources
 The robust Renko indicator for MT5 can be downloaded from: https://www.mql5.com/en/market/product/16347
