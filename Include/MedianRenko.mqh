@@ -17,6 +17,7 @@
 #define RENKO_HIGH 6
 #define RENKO_LOW 7
 #define RENKO_CLOSE 8
+#define RENKO_COLOR_CODE 9
 #define RENKO_BAR_OPEN_TIME 10
 #define RENKO_TICK_VOLUME 11
 
