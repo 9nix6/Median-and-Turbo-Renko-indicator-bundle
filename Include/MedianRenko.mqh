@@ -243,11 +243,12 @@ bool MedianRenko::IsNewBar()
 
 //
 // Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
+// RENKO_BAR_COLOR value is stored in ratesInfoArray[].spread
 //
 
 bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
 {
-   double o[],l[],h[],c[],time[],tick_volume[];
+   double o[],l[],h[],c[],barColor[],time[],tick_volume[],real_volume[];
 
    if(ArrayResize(o,count) == -1)
       return false;
@@ -257,9 +258,13 @@ bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
       return false;
    if(ArrayResize(c,count) == -1)
       return false;
+   if(ArrayResize(barColor,count) == -1)
+      return false;
    if(ArrayResize(time,count) == -1)
       return false;
    if(ArrayResize(tick_volume,count) == -1)
+      return false;
+   if(ArrayResize(real_volume,count) == -1)
       return false;
 
   
@@ -273,12 +278,16 @@ bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
       return false;
    if(CopyBuffer(medianRenkoHandle,RENKO_BAR_OPEN_TIME,start,count,time) == -1)
       return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_BAR_COLOR,start,count,barColor) == -1)
+      return false;
    if(CopyBuffer(medianRenkoHandle,RENKO_TICK_VOLUME,start,count,tick_volume) == -1)
+      return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_REAL_VOLUME,start,count,real_volume) == -1)
       return false;
 
    if(ArrayResize(ratesInfoArray,count) == -1)
       return false; 
-
+   
    int tempOffset = count-1;
    for(int i=0; i<count; i++)
    {
@@ -288,14 +297,18 @@ bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
       ratesInfoArray[tempOffset-i].close = c[i];
       ratesInfoArray[tempOffset-i].time = (datetime)time[i];
       ratesInfoArray[tempOffset-i].tick_volume = (long)tick_volume[i];
+      ratesInfoArray[tempOffset-i].real_volume = (long)real_volume[i];
+      ratesInfoArray[tempOffset-i].spread = (int)barColor[i];
    }
    
    ArrayFree(o);
    ArrayFree(l);
    ArrayFree(h);
    ArrayFree(c);
+   ArrayFree(barColor);
    ArrayFree(time);
    ArrayFree(tick_volume);   
+   ArrayFree(real_volume);   
    
    return true;
 }
