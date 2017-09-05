@@ -17,9 +17,10 @@
 #define RENKO_HIGH 6
 #define RENKO_LOW 7
 #define RENKO_CLOSE 8
-#define RENKO_COLOR_CODE 9
+#define RENKO_BAR_COLOR 9
 #define RENKO_BAR_OPEN_TIME 10
 #define RENKO_TICK_VOLUME 11
+#define RENKO_REAL_VOLUME 12
 
 #include <MedianRenkoSettings.mqh>
 
@@ -245,6 +246,7 @@ bool MedianRenko::IsNewBar()
 // Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
 // RENKO_BAR_COLOR value is stored in ratesInfoArray[].spread
 //
+
 
 bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
 {
