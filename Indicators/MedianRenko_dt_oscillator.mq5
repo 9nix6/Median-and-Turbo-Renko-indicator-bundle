@@ -60,7 +60,7 @@ double dtosf2[];
 // according to settings of the MedianRenko indicator already on chart
 //
 
-#include <MedianRenkoIndicator.mqh>
+#include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
 MedianRenkoIndicator medianRenkoIndicator;
 
 //

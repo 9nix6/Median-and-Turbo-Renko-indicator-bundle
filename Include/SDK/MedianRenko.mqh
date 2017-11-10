@@ -1,34 +1,60 @@
 //+------------------------------------------------------------------+
-//|                                       MedianRenko.mqh ver:1.47.0 |
+//|                                       MedianRenko.mqh ver:2.00.0 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
 
-#define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+#ifdef P_RENKO_BR
+   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+#else
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay200h" 
+   #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+#endif
 
-#define RENKO_MA1 0
-#define RENKO_MA2 1
-#define RENKO_CHANNEL_HIGH 2
-#define RENKO_CHANNEL_MID 3
-#define RENKO_CHANNEL_LOW 4
-#define RENKO_OPEN 5
-#define RENKO_HIGH 6
-#define RENKO_LOW 7
-#define RENKO_CLOSE 8
-#define RENKO_BAR_COLOR 9
-#define RENKO_BAR_OPEN_TIME 10
-#define RENKO_TICK_VOLUME 11
-#define RENKO_REAL_VOLUME 12
+//
+//  Data buffer offset values
+//
+#ifdef P_RENKO_BR
+   #define RENKO_OPEN            00
+   #define RENKO_HIGH            01
+   #define RENKO_LOW             02
+   #define RENKO_CLOSE           03 
+   #define RENKO_BAR_COLOR       04
+   #define RENKO_MA1             05
+   #define RENKO_MA2             06
+   #define RENKO_MA3             07
+   #define RENKO_BAR_OPEN_TIME   08
+   #define RENKO_TICK_VOLUME     09
+   #define RENKO_REAL_VOLUME     10
+#else
+   #define RENKO_OPEN            00
+   #define RENKO_HIGH            01
+   #define RENKO_LOW             02
+   #define RENKO_CLOSE           03 
+   #define RENKO_BAR_COLOR       04
+   #define RENKO_MA1             05
+   #define RENKO_MA2             06
+   #define RENKO_MA3             07
+   #define RENKO_CHANNEL_HIGH    08
+   #define RENKO_CHANNEL_MID     09
+   #define RENKO_CHANNEL_LOW     10
+   #define RENKO_BAR_OPEN_TIME   11
+   #define RENKO_TICK_VOLUME     12
+   #define RENKO_REAL_VOLUME     13
+   #define RENKO_BUY_VOLUME      14
+   #define RENKO_SELL_VOLUME     15
+   #define RENKO_BUYSELL_VOLUME  16
+#endif
 
-#include <MedianRenkoSettings.mqh>
+#include <AZ-INVEST/SDK/RenkoSettings.mqh>
 
 class MedianRenko
 {
    private:
    
-      MedianRenkoSettings * medianRenkoSettings;
+      RenkoSettings * medianRenkoSettings;
 
       //
       //  Median renko indicator handle
@@ -47,17 +73,16 @@ class MedianRenko
       void Deinit();
       bool Reload();
       
-      int GetHandle(void) { return medianRenkoHandle; };
+      int  GetHandle(void) { return medianRenkoHandle; };
       bool GetMqlRates(MqlRates &ratesInfoArray[], int start, int count);
-      int GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[], int start, int count);
-      int GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count);
-      double CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE applied_price);
-      double CalcAppliedPrice(const double &o,const double &l,const double &h,const double &c,ENUM_APPLIED_PRICE applied_price);
+      bool GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buySell[], int start, int count);
       bool GetMA1(double &MA[], int start, int count);
       bool GetMA2(double &MA[], int start, int count);
+      bool GetMA3(double &MA[], int start, int count);
       bool GetDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
       bool GetBollingerBands(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
       bool GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count); 
+      
       bool IsNewBar();
       
    private:
@@ -68,14 +93,16 @@ class MedianRenko
 
 MedianRenko::MedianRenko(void)
 {
-   medianRenkoSettings = new MedianRenkoSettings();
+#define CONSTRUCTOR1
+   medianRenkoSettings = new RenkoSettings();
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = _Symbol;
 }
 
 MedianRenko::MedianRenko(string symbol)
 {
-   medianRenkoSettings = new MedianRenkoSettings();
+#define CONSTRUCTOR2
+   medianRenkoSettings = new RenkoSettings();
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = symbol;
 }
@@ -104,8 +131,7 @@ int MedianRenko::Init()
          }
          else
          {
-            Print("Failed to load indicator settings.");
-            Alert("You need to put the Median Renko indicator on your chart first!");
+            Print("Failed to load indicator settings - Renko indicator not on chart");
             return INVALID_HANDLE;
          }
       }   
@@ -129,17 +155,71 @@ int MedianRenko::Init()
       #endif
    }   
 
-   MEDIANRENKO_SETTINGS s = medianRenkoSettings.Get();         
-
-   //medianRenkoSettings.Debug();
+   RENKO_SETTINGS s = medianRenkoSettings.GetRenkoSettings();
+   CHART_INDICATOR_SETTINGS cis = medianRenkoSettings.GetChartIndicatorSettings(); 
    
-   medianRenkoHandle = iCustom(this.medianRenkoSymbol,PERIOD_M1,RENKO_INDICATOR_NAME, 
+   //medianRenkoSettings.Debug();
+#ifdef P_RENKO_BR
+   medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
-                                       s._retracementFactor,
+                                       s.showWicks,
+                                       s.showNumberOfDays,
+                                       s.resetOpenOnNewTradingDay,
+                                       TopBottomPaddingPercentage,
+                                       showPivots,
+                                       pivotPointCalculationType,
+                                       RColor,
+                                       PColor,
+                                       SColor,
+                                       PDHColor,
+                                       PDLColor,
+                                       PDCColor,   
+                                       showNextBarLevels,
+                                       HighThresholdIndicatorColor,
+                                       LowThresholdIndicatorColor,
+                                       InfoTextColor,
+                                       UseSoundSignalOnNewBar,
+                                       SoundFileBull,
+                                       SoundFileBear,
+                                       cis.MA1on, 
+                                       cis.MA1period,
+                                       cis.MA1method,
+                                       cis.MA1applyTo,
+                                       cis.MA1shift,
+                                       cis.MA2on,
+                                       cis.MA2period,
+                                       cis.MA2method,
+                                       cis.MA2applyTo,
+                                       cis.MA2shift,
+                                       cis.MA3on,
+                                       cis.MA3period,
+                                       cis.MA3method,
+                                       cis.MA3applyTo,
+                                       cis.MA3shift,
+                                       UsedInEA);
+#else   
+   medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
+                                       s.barSizeInTicks,
+                                       s.retracementFactor,
                                        s.symetricalReversals,
                                        s.showWicks,
-                                       s._startFromDateTime,
+                                       s.atrEnabled,
+                                       //s.atrTimeFrame,
+                                       s.atrPeriod,
+                                       s.atrPercentage,
+                                       s.showNumberOfDays,
+                                       s.applyOffsetToFirstBar,
+                                       s.offsetValue,
                                        s.resetOpenOnNewTradingDay,
+                                       TopBottomPaddingPercentage,
+                                       showPivots,
+                                       pivotPointCalculationType,
+                                       RColor,
+                                       PColor,
+                                       SColor,
+                                       PDHColor,
+                                       PDLColor,
+                                       PDCColor,   
                                        showNextBarLevels,
                                        HighThresholdIndicatorColor,
                                        LowThresholdIndicatorColor,
@@ -151,26 +231,33 @@ int MedianRenko::Init()
                                        SendPushNotifications,
                                        SoundFileBull,
                                        SoundFileBear,
-                                       s.MA1on, 
-                                       s.MA1period,
-                                       s.MA1method,
-                                       s.MA1applyTo,
-                                       s.MA1shift,
-                                       s.MA2on,
-                                       s.MA2period,
-                                       s.MA2method,
-                                       s.MA2applyTo,
-                                       s.MA2shift,
-                                       s.ShowChannel,
+                                       cis.MA1on, 
+                                       cis.MA1period,
+                                       cis.MA1method,
+                                       cis.MA1applyTo,
+                                       cis.MA1shift,
+                                       cis.MA2on,
+                                       cis.MA2period,
+                                       cis.MA2method,
+                                       cis.MA2applyTo,
+                                       cis.MA2shift,
+                                       cis.MA3on,
+                                       cis.MA3period,
+                                       cis.MA3method,
+                                       cis.MA3applyTo,
+                                       cis.MA3shift,
+                                       cis.ShowChannel,
                                        "",
-                                       s.DonchianPeriod,
-                                       s.BBapplyTo,
-                                       s.BollingerBandsPeriod,
-                                       s.BollingerBandsDeviations,
-                                       s.SuperTrendPeriod,
-                                       s.SuperTrendMultiplier,
+                                       cis.DonchianPeriod,
+                                       cis.BBapplyTo,
+                                       cis.BollingerBandsPeriod,
+                                       cis.BollingerBandsDeviations,
+                                       cis.SuperTrendPeriod,
+                                       cis.SuperTrendMultiplier,
                                        "",
+                                       DisplayAsBarChart,
                                        UsedInEA);
+#endif                                       
       
     if(medianRenkoHandle == INVALID_HANDLE)
     {
@@ -227,18 +314,15 @@ bool MedianRenko::IsNewBar()
    
    GetMqlRates(currentRenko,1,1);
    
-   if((prevRenko.open != currentRenko[0].open) ||
-      (prevRenko.high != currentRenko[0].high) ||
-      (prevRenko.low != currentRenko[0].low) ||
-      (prevRenko.close != currentRenko[0].close))
+   if(currentRenko[0].time == 0)
+      return false;
+   
+   if(prevRenko.time < currentRenko[0].time)
    {
-      prevRenko.open = currentRenko[0].open;
-      prevRenko.high = currentRenko[0].high;
-      prevRenko.low = currentRenko[0].low;
-      prevRenko.close = currentRenko[0].close;
+      prevRenko.time = currentRenko[0].time;
       return true;
    }
-   
+
    return false;
 }
 
@@ -246,7 +330,6 @@ bool MedianRenko::IsNewBar()
 // Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
 // RENKO_BAR_COLOR value is stored in ratesInfoArray[].spread
 //
-
 
 bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
 {
@@ -315,107 +398,50 @@ bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
    return true;
 }
 
-//
-// Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
-//
-
-int MedianRenko::GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[], int start, int count)
+bool MedianRenko::GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buySell[], int start, int count)
 {
-   if(ArrayResize(o,count) == -1)
+   double b[],s[],bs[];
+   
+   if(ArrayResize(b,count) == -1)
+      return false;
+   if(ArrayResize(s,count) == -1)
+      return false;
+   if(ArrayResize(bs,count) == -1)
       return false;
 
-   int _count = CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,count,o);
-   if(_count == -1)
-      return _count;
-
-
-   if(ArrayResize(o,_count) == -1)
-      return -1;
-   if(ArrayResize(l,_count) == -1)
-      return -1;
-   if(ArrayResize(h,_count) == -1)
-      return -1;
-   if(ArrayResize(c,_count) == -1)
-      return -1;
-  
-   if(CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,_count,o) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_LOW,start,_count,l) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_HIGH,start,_count,h) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_CLOSE,start,_count,c) == -1)
-      return -1;
-   
-   return _count;
-}
-
-//
-// Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
-//
-
-int MedianRenko::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count)
-{
-   if(ArrayResize(o,count) == -1)
+#ifdef P_RENKO_BR
+#else
+   if(CopyBuffer(medianRenkoHandle,RENKO_BUY_VOLUME,start,count,b) == -1)
       return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_SELL_VOLUME,start,count,s) == -1)
+      return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_BUYSELL_VOLUME,start,count,bs) == -1)
+      return false;
+#endif
 
-   int _count = CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,count,o);
-   if(_count == -1)
-      return _count;
+   if(ArrayResize(buy,count) == -1)
+      return false; 
+   if(ArrayResize(sell,count) == -1)
+      return false; 
+   if(ArrayResize(buySell,count) == -1)
+      return false; 
 
-
-   if(ArrayResize(o,_count) == -1)
-      return -1;
-   if(ArrayResize(l,_count) == -1)
-      return -1;
-   if(ArrayResize(h,_count) == -1)
-      return -1;
-   if(ArrayResize(c,_count) == -1)
-      return -1;
-   if(ArrayResize(price,_count) == -1)
-      return -1;
-  
-   if(CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,_count,o) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_LOW,start,_count,l) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_HIGH,start,_count,h) == -1)
-      return -1;
-   if(CopyBuffer(medianRenkoHandle,RENKO_CLOSE,start,_count,c) == -1)
-      return -1;
-   
-   if(applied_price == PRICE_CLOSE) 
+   int tempOffset = count-1;
+   for(int i=0; i<count; i++)
    {
-      if(CopyBuffer(medianRenkoHandle,RENKO_CLOSE,start,_count,price) == -1)
-         return -1;
-   }
-   else if(applied_price == PRICE_OPEN) 
-   {
-      if(CopyBuffer(medianRenkoHandle,RENKO_OPEN,start,_count,price) == -1)
-         return -1;
-   }
-   else if(applied_price == PRICE_HIGH) 
-   {
-      if(CopyBuffer(medianRenkoHandle,RENKO_HIGH,start,_count,price) == -1)
-         return -1;
-   }
-   else if(applied_price == PRICE_LOW) 
-   {
-      if(CopyBuffer(medianRenkoHandle,RENKO_LOW,start,_count,price) == -1)
-         return -1;
-   }
-   else
-   {       
-      for(int i=0; i<_count; i++)
-      {
-         price[i] = CalcAppliedPrice(o[i],l[i],h[i],c[i],applied_price);
-      }
+      buy[tempOffset-i] = (long)b[i];
+      sell[tempOffset-i] = (long)s[i];
+      buySell[tempOffset-i] = (long)bs[i];
    }
    
+   ArrayFree(b);
+   ArrayFree(s);
+   ArrayFree(bs);
    
-   return _count;
+   return true;
+
+
 }
-
 //
 // Get "count" MovingAverage1 values into "MA[]" array starting from "start" bar  
 //
@@ -467,6 +493,31 @@ bool MedianRenko::GetMA2(double &MA[], int start, int count)
 }
 
 //
+// Get "count" MovingAverage3 values into "MA[]" starting from "start" bar  
+//
+
+bool MedianRenko::GetMA3(double &MA[], int start, int count)
+{
+   double tempMA[];
+   if(ArrayResize(tempMA,count) == -1)
+      return false;
+
+   if(ArrayResize(MA,count) == -1)
+      return false;
+   
+   if(CopyBuffer(medianRenkoHandle,RENKO_MA3,start,count,tempMA) == -1)
+      return false;
+   
+   for(int i=0; i<count; i++)
+   {
+      MA[count-1-i] = tempMA[i];
+   }
+   
+   ArrayFree(tempMA);   
+   return true;
+}
+
+//
 // Get "count" Renko Donchian channel values into "HighArray[]", "MidArray[]", and "LowArray[]" arrays starting from "start" bar  
 //
 
@@ -502,6 +553,9 @@ bool MedianRenko::GetChannel(double &HighArray[], double &MidArray[], double &Lo
 {
    double tempH[], tempM[], tempL[];
 
+#ifdef P_RENKO_BR
+   return false;
+#else
    if(ArrayResize(tempH,count) == -1)
       return false;
    if(ArrayResize(tempM,count) == -1)
@@ -536,48 +590,6 @@ bool MedianRenko::GetChannel(double &HighArray[], double &MidArray[], double &Lo
    ArrayFree(tempL);
    
    return true;
+#endif
 }
 
-//
-//  Function used for calculating the Apllied Price based on Renko OLHC values
-//
-
-double MedianRenko::CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE applied_price)
-{
-      if(applied_price == PRICE_CLOSE)
-         return _rates.close;
-      else if (applied_price == PRICE_OPEN)
-         return _rates.open;
-      else if (applied_price == PRICE_HIGH)
-         return _rates.high;
-      else if (applied_price == PRICE_LOW)
-         return _rates.low;
-      else if (applied_price == PRICE_MEDIAN)
-         return (_rates.high + _rates.low) / 2;
-      else if (applied_price == PRICE_TYPICAL)
-         return (_rates.high + _rates.low + _rates.close) / 3;
-      else if (applied_price == PRICE_WEIGHTED)
-         return (_rates.high + _rates.low + _rates.close + _rates.close) / 4;
-         
-      return 0.0;
-}
-
-double MedianRenko::CalcAppliedPrice(const double &o,const double &l,const double &h,const double &c, ENUM_APPLIED_PRICE applied_price)
-{
-      if(applied_price == PRICE_CLOSE)
-         return c;
-      else if (applied_price == PRICE_OPEN)
-         return o;
-      else if (applied_price == PRICE_HIGH)
-         return h;
-      else if (applied_price == PRICE_LOW)
-         return l;
-      else if (applied_price == PRICE_MEDIAN)
-         return (h + l) / 2;
-      else if (applied_price == PRICE_TYPICAL)
-         return (h + l + c) / 3;
-      else if (applied_price == PRICE_WEIGHTED)
-         return (h + l + c +c) / 4;
-      
-      return 0.0;
-}

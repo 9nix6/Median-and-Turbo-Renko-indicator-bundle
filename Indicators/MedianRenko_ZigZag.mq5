@@ -26,10 +26,8 @@ double         LowMapBuffer[];      // lows
 int            level=3;             // recounting depth
 double         deviation;           // deviation in points
 
-#include <MedianRenkoIndicator.mqh>
-
+#include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
 MedianRenkoIndicator medianRenkoIndicator;
-
 
 
 //+------------------------------------------------------------------+
