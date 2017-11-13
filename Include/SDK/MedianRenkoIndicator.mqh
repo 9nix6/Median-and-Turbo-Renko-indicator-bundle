@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.00"
+#property version   "2.01"
 #include <AZ-INVEST/SDK/MedianRenko.mqh>
 
 class MedianRenkoIndicator
@@ -178,7 +178,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
-      return true; //////// false
+      return false; 
    } 
    
 
