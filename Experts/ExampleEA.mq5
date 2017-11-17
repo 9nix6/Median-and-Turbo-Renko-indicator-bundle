@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.04"
+#property version   "2.05"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -96,7 +96,7 @@ void OnTick()
       double MA1[]; // array to be filled by values of the first moving average
       double MA2[]; // array to be filled by values of the second moving average
       
-      if(medianRenko.GetMA1(MA1,startAtBar,numberOfBars) && medianRenko.GetMA2(MA2,startAtBar,numberOfBars))
+      if(medianRenko.GetMA1(MA1,startAtBar,numberOfBars) && medianRenko.GetMA1(MA2,startAtBar,numberOfBars))
       {
          //
          // Values are stored in the MA1 and MA2 arrays and are now ready for use
@@ -138,7 +138,7 @@ void OnTick()
             (RenkoRatesInfoArray[2].open < RenkoRatesInfoArray[2].close))
          {
             // bearish reversal
-            infoString = "Previous bar formed bearich reversal";
+            infoString = "Previous bar formed bearish reversal";
          }
          else
          {
