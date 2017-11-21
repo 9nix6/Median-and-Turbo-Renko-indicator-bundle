@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.01"
+#property version   "2.02"
 #include <AZ-INVEST/SDK/MedianRenko.mqh>
 
 class MedianRenkoIndicator
@@ -11,6 +11,7 @@ class MedianRenkoIndicator
       int                  rates_total;
       int                  prev_calculated;
       bool                 getVolumes;
+      bool                 getVolumeBreakdown;
       bool                 getTime;
       bool                 useAppliedPrice;
       ENUM_APPLIED_PRICE   applied_price;
@@ -27,13 +28,17 @@ class MedianRenkoIndicator
       double   Price[];
       long     Tick_volume[];
       long     Real_volume[];
+      double   Buy_volume[];
+      double   Sell_volume[];
+      double   BuySell_volume[];
       bool     IsNewBar;
    
                MedianRenkoIndicator();
                ~MedianRenkoIndicator();
-      
+               
       void     SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) { this.useAppliedPrice = true; this.applied_price = _applied_price; };
       void     SetGetVolumesFlag() { this.getVolumes = true; };
+      void     SetGetVolumeBreakdownFlag() { this.getVolumeBreakdown = true; };
       void     SetGetTimeFlag() { this.getTime = true; };
       
       bool     OnCalculate(const int rates_total,const int prev_calculated, const datetime &_Time[]);
@@ -45,8 +50,8 @@ class MedianRenkoIndicator
       bool  CheckStatus();
       bool  NeedsReload();
       int   GetOLHC(int start, int count);
-      int   GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[], int start, int count);
-      int   GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[],double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count);
+      int   GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[], double &buyVolume[], double &sellVolume[], double &buySellVolume[], int start, int count);
+      int   GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[], double &buyVolume[], double &sellVolume[], double &buySellVolume[], double &price[],ENUM_APPLIED_PRICE applied_price, int start, int count);
       void  OLHCShiftRight();
       void  OLHCResize();
       
@@ -104,12 +109,15 @@ bool MedianRenkoIndicator::NeedsReload(void)
 }
 
 bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_calculated, const datetime &_Time[])
-{
+{   
    static bool firstRun = true;
 
    if(firstRun)
    {
+      Canvas_IsNewBar(_Time); 
       Canvas_RatesTotalChangedBy(_rates_total);   
+      IsNewBar = medianRenko.IsNewBar();   
+      
       firstRun = false;
    }
 
@@ -133,19 +141,19 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    ArraySetAsSeries(this.Price,false);   
    ArraySetAsSeries(this.Tick_volume,false);   
    ArraySetAsSeries(this.Real_volume,false);   
+   ArraySetAsSeries(this.Buy_volume,false);   
+   ArraySetAsSeries(this.Sell_volume,false);   
+   ArraySetAsSeries(this.BuySell_volume,false);   
 
    bool needsReload  = (NeedsReload() || (!this.dataReady)); 
-   IsNewBar = medianRenko.IsNewBar();
-   bool canvasIsNewTime = Canvas_IsNewBar(_Time);
-   int  change = Canvas_RatesTotalChangedBy(_rates_total);
-   
+      
    if(needsReload)
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
       return false;
    }                    
-   
+         
    /*
    if(needsReload || IsNewBar || canvasIsNewTime || (change != 0))
    {  
@@ -155,7 +163,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       return true;         
    }
    */
-   
+   bool change = Canvas_RatesTotalChangedBy(_rates_total);
    if(change != 0)
    {
       #ifdef DISPLAY_DEBUG_MSG
@@ -179,7 +187,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       Canvas_IsNewBar(_Time);
       return true;   
    }
-   else if(canvasIsNewTime)
+   else if(Canvas_IsNewBar(_Time))
    {
       #ifdef DISPLAY_DEBUG_MSG
          Print("Got Canvas_IsNewBar");
@@ -197,16 +205,14 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       return true;
    }
 
-   if(needsReload || IsNewBar)
+   IsNewBar = medianRenko.IsNewBar();
+   if(IsNewBar)
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
-      
-      if(needsReload)
-         return false; 
-      else
-         return true;
+      return true;
    } 
+
    
    //
    // Only recalculate last bar
@@ -223,6 +229,8 @@ int MedianRenkoIndicator::GetOLHC(int start, int count)
    if((start == 0) && (count == 0) && dataReady)
    {
      MqlRates tempRates[1];
+     double b[1],s[1],bs[1];
+     
      int last = ArraySize(Open)-1;
      
      if(last < 0)
@@ -246,12 +254,19 @@ int MedianRenkoIndicator::GetOLHC(int start, int count)
      {
          this.Price[last] = CalcAppliedPrice(tempRates[0],this.applied_price);
      }
+     if(getVolumeBreakdown)
+     {
+        medianRenko.GetBuySellVolumeBreakdown(b,s,bs,0,1);
+        this.Buy_volume[last] = b[0];
+        this.Sell_volume[last] = s[0];
+        this.BuySell_volume[last] = bs[0];        
+     }
 
      return 1;
    }
    else
    {
-      return  GetOLHCAndApplPriceForIndicatorCalc(this.Open,this.Low,this.High,this.Close,this.Time,this.Tick_volume,this.Real_volume,this.Price,this.applied_price,0,count);   
+      return  GetOLHCAndApplPriceForIndicatorCalc(this.Open,this.Low,this.High,this.Close,this.Time,this.Tick_volume,this.Real_volume, this.Buy_volume, this.Sell_volume, this.BuySell_volume, this.Price,this.applied_price,0,count);   
    }
 }
 
@@ -280,6 +295,12 @@ void MedianRenkoIndicator::OLHCShiftRight()
          this.Tick_volume[i] = this.Tick_volume[i-1];
          this.Real_volume[i] = this.Real_volume[i-1];         
       }
+      if(getVolumeBreakdown)
+      {
+         this.Buy_volume[i] = this.Buy_volume[i-1];
+         this.Sell_volume[i] = this.Sell_volume[i-1];
+         this.BuySell_volume[i] = this.BuySell_volume[i-1];
+      }
    }
    
    this.Open[0] = 0.0;
@@ -295,6 +316,12 @@ void MedianRenkoIndicator::OLHCShiftRight()
    {
       this.Tick_volume[0] = 0.0;
       this.Real_volume[0] = 0.0;         
+   }
+   if(getVolumeBreakdown)
+   {
+      this.Buy_volume[0] = 0;
+      this.Sell_volume[0] = 0;
+      this.BuySell_volume[0] = 0;
    }
 }
 
@@ -318,6 +345,12 @@ void MedianRenkoIndicator::OLHCResize()
    {
       ArrayResize(this.Tick_volume,count+1);
       ArrayResize(this.Real_volume,count+1);
+   }
+   if(getVolumeBreakdown)
+   {
+      ArrayResize(this.Buy_volume,count+1);
+      ArrayResize(this.Sell_volume,count+1);
+      ArrayResize(this.BuySell_volume,count+1);
    }
    
    OLHCShiftRight();
@@ -374,7 +407,7 @@ int MedianRenkoIndicator::Canvas_RatesTotalChangedBy(int ratesTotalNow)
    return 0;
 }
 
-int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[], long &tickVolume[],long &realVolume[], int start, int count)
+int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[], long &tickVolume[],long &realVolume[], double &buyVolume[], double &sellVolume[], double &buySellVolume[], int start, int count)
 {
    int handle;
    double temp[];
@@ -402,6 +435,16 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
    {
       if(ArrayResize(t,count) == -1)
          return -1;
+   }
+   
+   if(getVolumeBreakdown)
+   {
+      if(ArrayResize(buyVolume,count) == -1)
+         return -1;
+      if(ArrayResize(sellVolume,count) == -1)
+         return -1;
+      if(ArrayResize(buySellVolume,count) == -1)
+         return -1; 
    }
    
    handle = medianRenko.GetHandle();
@@ -437,6 +480,12 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
          ArrayInitialize(tickVolume,0x0);
          ArrayInitialize(realVolume,0x0);
       }
+      if(getVolumeBreakdown)
+      {
+         ArrayInitialize(buyVolume,0x0);
+         ArrayInitialize(sellVolume,0x0);
+         ArrayInitialize(buySellVolume,0x0);
+      }
       // less data - indicator requres more
       
       ArrayCopy(o,temp,(count-_count),0);
@@ -470,6 +519,42 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
             return -1;
          ArrayCopy(realVolume,temp,(count-_count),0);      
       }
+      
+#ifdef P_RENKO_BR
+   #ifdef P_RENKO_BR_PRO
+      if(getVolumeBreakdown)
+      {      
+         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(buyVolume,temp,(count-_count),0);
+
+         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(sellVolume,temp,(count-_count),0);
+
+         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(buySellVolume,temp,(count-_count),0);
+      }
+   #else
+   #endif
+#else      
+      if(getVolumeBreakdown)
+      {      
+         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(buyVolume,temp,(count-_count),0);
+
+         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(sellVolume,temp,(count-_count),0);
+
+         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,_count,temp) == -1)
+            return -1;
+         ArrayCopy(buySellVolume,temp,(count-_count),0);
+      }
+#endif
+
    }
    else
    {
@@ -498,6 +583,41 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
             return -1;   
          ArrayCopy(realVolume,temp);
       }
+      
+#ifdef P_RENKO_BR
+   #ifdef P_RENKO_BR_PRO
+      if(getVolumeBreakdown)
+      {      
+         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(buyVolume,temp);
+
+         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(sellVolume,temp);
+
+         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(buySellVolume,temp);
+      }
+   #else
+   #endif
+#else
+      if(getVolumeBreakdown)
+      {      
+         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(buyVolume,temp);
+
+         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(sellVolume,temp);
+
+         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,count,temp) == -1)
+            return -1;
+         ArrayCopy(buySellVolume,temp);
+      }
+#endif      
    }
      
    return count;
@@ -507,10 +627,11 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
 // Get "count" Renko MqlRates into "ratesInfoArray[]" array starting from "start" bar  
 //
 
-int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[],double &price[],ENUM_APPLIED_PRICE _applied_price, int start, int count)
+int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double &l[],double &h[],double &c[],datetime &t[],long &tickVolume[],long &realVolume[],double &buyVolume[], double &sellVolume[], double &buySellVolume[],double &price[],ENUM_APPLIED_PRICE _applied_price, int start, int count)
 {
    dataReady = true;
-   int _count = GetOLHCForIndicatorCalc(o,l,h,c,t,tickVolume,realVolume,start,count);
+   
+   int _count = GetOLHCForIndicatorCalc(o,l,h,c,t,tickVolume,realVolume,buyVolume,sellVolume,buySellVolume,start,count);
    if(_count < 0)
    {
       dataReady = false;
@@ -545,8 +666,6 @@ int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double
       
    return _count;
 }
-
-
 
 ENUM_TIMEFRAMES MedianRenkoIndicator::TFMigrate(int tf)
   {

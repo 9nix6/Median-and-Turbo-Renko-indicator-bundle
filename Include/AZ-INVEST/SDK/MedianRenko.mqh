@@ -7,10 +7,14 @@
 #property link      "http://www.az-invest.eu"
 
 #ifdef P_RENKO_BR
-   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+   #ifdef P_RENKO_BR_PRO
+      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
+   #else
+      #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+   #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay201" 
-   #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay201" 
+   //#define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 
 //
@@ -25,9 +29,22 @@
    #define RENKO_MA1             05
    #define RENKO_MA2             06
    #define RENKO_MA3             07
-   #define RENKO_BAR_OPEN_TIME   08
-   #define RENKO_TICK_VOLUME     09
-   #define RENKO_REAL_VOLUME     10
+
+   #ifdef P_RENKO_BR_PRO
+      #define RENKO_CHANNEL_HIGH    08
+      #define RENKO_CHANNEL_MID     09
+      #define RENKO_CHANNEL_LOW     10
+      #define RENKO_BAR_OPEN_TIME   11
+      #define RENKO_TICK_VOLUME     12
+      #define RENKO_REAL_VOLUME     13
+      #define RENKO_BUY_VOLUME      14
+      #define RENKO_SELL_VOLUME     15
+      #define RENKO_BUYSELL_VOLUME  16
+   #else
+      #define RENKO_BAR_OPEN_TIME   08
+      #define RENKO_TICK_VOLUME     09
+      #define RENKO_REAL_VOLUME     10
+   #endif
 #else
    #define RENKO_OPEN            00
    #define RENKO_HIGH            01
@@ -75,7 +92,7 @@ class MedianRenko
       
       int  GetHandle(void) { return medianRenkoHandle; };
       bool GetMqlRates(MqlRates &ratesInfoArray[], int start, int count);
-      bool GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buySell[], int start, int count);
+      bool GetBuySellVolumeBreakdown(double &buy[], double &sell[], double &buySell[], int start, int count);
       bool GetMA1(double &MA[], int start, int count);
       bool GetMA2(double &MA[], int start, int count);
       bool GetMA3(double &MA[], int start, int count);
@@ -160,7 +177,68 @@ int MedianRenko::Init()
    
    //medianRenkoSettings.Debug();
 #ifdef P_RENKO_BR
+   #ifdef P_RENKO_BR_PRO
    medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
+                                       s.barSizeInTicks,
+                                       //s.retracementFactor,
+                                       //s.symetricalReversals,
+                                       s.showWicks,
+                                       //s.atrEnabled,
+                                       //s.atrTimeFrame,
+                                       //s.atrPeriod,
+                                       //s.atrPercentage,
+                                       s.showNumberOfDays,
+                                       //s.applyOffsetToFirstBar,
+                                       //s.offsetValue,
+                                       s.resetOpenOnNewTradingDay,
+                                       TopBottomPaddingPercentage,
+                                       showPivots,
+                                       pivotPointCalculationType,
+                                       RColor,
+                                       PColor,
+                                       SColor,
+                                       PDHColor,
+                                       PDLColor,
+                                       PDCColor,   
+                                       showNextBarLevels,
+                                       HighThresholdIndicatorColor,
+                                       LowThresholdIndicatorColor,
+                                       //showCurrentBarOpenTime,
+                                       InfoTextColor,
+                                       UseSoundSignalOnNewBar,
+                                       //OnlySignalReversalBars,
+                                       //UseAlertWindow,
+                                       //SendPushNotifications,
+                                       SoundFileBull,
+                                       SoundFileBear,
+                                       cis.MA1on, 
+                                       cis.MA1period,
+                                       cis.MA1method,
+                                       cis.MA1applyTo,
+                                       cis.MA1shift,
+                                       cis.MA2on,
+                                       cis.MA2period,
+                                       cis.MA2method,
+                                       cis.MA2applyTo,
+                                       cis.MA2shift,
+                                       cis.MA3on,
+                                       cis.MA3period,
+                                       cis.MA3method,
+                                       cis.MA3applyTo,
+                                       cis.MA3shift,
+                                       cis.ShowChannel,
+                                       "",
+                                       cis.DonchianPeriod,
+                                       cis.BBapplyTo,
+                                       cis.BollingerBandsPeriod,
+                                       cis.BollingerBandsDeviations,
+                                       cis.SuperTrendPeriod,
+                                       cis.SuperTrendMultiplier,
+                                       "",
+                                       DisplayAsBarChart,
+                                       UsedInEA);   
+   #else
+      medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
                                        s.showWicks,
                                        s.showNumberOfDays,
@@ -197,6 +275,7 @@ int MedianRenko::Init()
                                        cis.MA3applyTo,
                                        cis.MA3shift,
                                        UsedInEA);
+   #endif
 #else   
    medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
@@ -261,11 +340,19 @@ int MedianRenko::Init()
       
     if(medianRenkoHandle == INVALID_HANDLE)
     {
+#ifdef P_RENKO_BR
+      Print("P-RENKO BR indicator init failed on error ",GetLastError());
+#else
       Print("Median Renko indicator init failed on error ",GetLastError());
+#endif
     }
     else
     {
+#ifdef P_RENKO_BR
+      Print("P_RENKO BR indicator init OK");
+#else
       Print("Median Renko indicator init OK");
+#endif
     }
      
     return medianRenkoHandle;
@@ -298,9 +385,17 @@ void MedianRenko::Deinit()
       return;
       
    if(IndicatorRelease(medianRenkoHandle))
-      Print("Median Rneko indicator handle released");
+#ifdef P_RENKO_BR
+      Print("P-RENKO BR indicator handle released");
+#else   
+      Print("Median Renko indicator handle released");
+#endif
    else 
+#ifdef P_RENKO_BR
+      Print("Failed to release P-RENKO BR indicator handle");
+#else   
       Print("Failed to release Median Renko indicator handle");
+#endif
 }
 
 //
@@ -398,7 +493,7 @@ bool MedianRenko::GetMqlRates(MqlRates &ratesInfoArray[], int start, int count)
    return true;
 }
 
-bool MedianRenko::GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buySell[], int start, int count)
+bool MedianRenko::GetBuySellVolumeBreakdown(double &buy[], double &sell[], double &buySell[], int start, int count)
 {
    double b[],s[],bs[];
    
@@ -429,9 +524,9 @@ bool MedianRenko::GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buy
    int tempOffset = count-1;
    for(int i=0; i<count; i++)
    {
-      buy[tempOffset-i] = (long)b[i];
-      sell[tempOffset-i] = (long)s[i];
-      buySell[tempOffset-i] = (long)bs[i];
+      buy[tempOffset-i] = b[i];
+      sell[tempOffset-i] = s[i];
+      buySell[tempOffset-i] = bs[i];
    }
    
    ArrayFree(b);
@@ -442,6 +537,7 @@ bool MedianRenko::GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buy
 
 
 }
+
 //
 // Get "count" MovingAverage1 values into "MA[]" array starting from "start" bar  
 //
