@@ -20,6 +20,10 @@ This short video will walk you through the installation process:
 
 [![Installing the renko SDK](http://img.youtube.com/vi/cKZKoUMrMQE/0.jpg)](http://www.youtube.com/watch?v=cKZKoUMrMQE)
 
+## Backtesting your EAs
+
+[![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/00jelr1y200)
+
 ## Resources
 The robust Renko indicator for MT5 can be downloaded from: https://www.mql5.com/en/market/product/16347
 
