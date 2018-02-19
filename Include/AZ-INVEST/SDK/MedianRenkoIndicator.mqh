@@ -1,6 +1,9 @@
 #property copyright "Copyright 2017, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
 #property version   "2.02"
+
+input bool UseOnRenkoChart = true; // Use this indicator on Renko chart
+
 #include <AZ-INVEST/SDK/MedianRenko.mqh>
 
 class MedianRenkoIndicator
@@ -45,6 +48,8 @@ class MedianRenkoIndicator
       int      GetPrevCalculated() { return prev_calculated; };     
       void     BufferShiftLeft(double &buffer[]);
       
+      
+      
    private:
   
       bool  CheckStatus();
@@ -68,9 +73,12 @@ class MedianRenkoIndicator
 
 MedianRenkoIndicator::MedianRenkoIndicator(void)
 {
-   medianRenko = new MedianRenko();
+   medianRenko = new MedianRenko(UseOnRenkoChart);
+   
    if(medianRenko != NULL)
       medianRenko.Init();
+   else
+      Print("!Error constructing MedianRenkoIndicator");
       
    useAppliedPrice = false;
    getVolumes = false;
@@ -126,7 +134,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       if(medianRenko != NULL)
          delete medianRenko;
       
-      medianRenko = new MedianRenko();
+      medianRenko = new MedianRenko(UseOnRenkoChart);
       if(medianRenko != NULL)
          medianRenko.Init();
       

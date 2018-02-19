@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                       MedianRenko.mqh ver:2.00.0 |
+//|                                       MedianRenko.mqh ver:2.01.1 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -8,12 +8,13 @@
 
 #ifdef P_RENKO_BR
    #ifdef P_RENKO_BR_PRO
-      #define RENKO_INDICATOR_NAME "P-RENKO BR Pro" 
+      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
    #else
+   //  #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.02" 
       #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay201" 
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay202" 
    #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 
@@ -79,10 +80,12 @@ class MedianRenko
       
       int medianRenkoHandle;
       string medianRenkoSymbol;
+      bool usedByIndicatorOnRenkoChart;
    
    public:
       
       MedianRenko();   
+      MedianRenko(bool isUsedByIndicatorOnRenkoChart);   
       MedianRenko(string symbol);
       ~MedianRenko(void);
       
@@ -105,6 +108,8 @@ class MedianRenko
    private:
 
       bool GetChannel(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count);
+      void Debug(RENKO_SETTINGS &s, CHART_INDICATOR_SETTINGS &cis);
+      int GetIndicatorHandle();
    
 };
 
@@ -114,6 +119,15 @@ MedianRenko::MedianRenko(void)
    medianRenkoSettings = new RenkoSettings();
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = _Symbol;
+   usedByIndicatorOnRenkoChart = false;
+}
+
+MedianRenko::MedianRenko(bool isUsedByIndicatorOnRenkoChart)
+{
+   medianRenkoSettings = new RenkoSettings();
+   medianRenkoHandle = INVALID_HANDLE;
+   medianRenkoSymbol = _Symbol;
+   usedByIndicatorOnRenkoChart = isUsedByIndicatorOnRenkoChart;
 }
 
 MedianRenko::MedianRenko(string symbol)
@@ -122,6 +136,7 @@ MedianRenko::MedianRenko(string symbol)
    medianRenkoSettings = new RenkoSettings();
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = symbol;
+   usedByIndicatorOnRenkoChart = false;
 }
 
 MedianRenko::~MedianRenko(void)
@@ -136,8 +151,18 @@ MedianRenko::~MedianRenko(void)
 
 int MedianRenko::Init()
 {
-   if(!MQLInfoInteger((int)MQL5_TESTING))
+   if(!MQLInfoInteger((int)MQL5_TESTING)) // not testing
    {
+      if(usedByIndicatorOnRenkoChart) 
+      {
+         //
+         // Indicator on Renko chart uses the values of the Renko chart for calculations
+         //      
+         medianRenkoHandle = GetIndicatorHandle();
+         return medianRenkoHandle;
+
+      }
+   
       if(!medianRenkoSettings.Load())
       {
          if(medianRenkoHandle != INVALID_HANDLE)
@@ -152,30 +177,44 @@ int MedianRenko::Init()
             return INVALID_HANDLE;
          }
       }   
-      
+     
       if(medianRenkoHandle != INVALID_HANDLE)
          Deinit();
 
    }
    else
    {
-      #ifdef SHOW_INDICATOR_INPUTS
+      if(usedByIndicatorOnRenkoChart) 
+      {
          //
-         //  Load settings from EA inputs
-         //
-         medianRenkoSettings.Load();
-      #else
-         //
-         //  Save indicator inputs for use by EA attached to same chart.
-         //
-         medianRenkoSettings.Save();
-      #endif
+         // Indicator on Renko chart uses the values of the Renko chart for calculations
+         //      
+         medianRenkoHandle = GetIndicatorHandle();
+         return medianRenkoHandle;
+
+      }
+      else
+      {
+         #ifdef SHOW_INDICATOR_INPUTS
+            //
+            //  Load settings from EA inputs
+            //
+            medianRenkoSettings.Load();
+            
+         #else
+            //
+            //  Save indicator inputs for use by EA attached to same chart.
+            //
+            medianRenkoSettings.Save();
+         #endif      
+      }
    }   
 
    RENKO_SETTINGS s = medianRenkoSettings.GetRenkoSettings();
    CHART_INDICATOR_SETTINGS cis = medianRenkoSettings.GetChartIndicatorSettings(); 
    
-   //medianRenkoSettings.Debug();
+  // this.Debug(s, cis);
+      
 #ifdef P_RENKO_BR
    #ifdef P_RENKO_BR_PRO
    medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
@@ -274,7 +313,7 @@ int MedianRenko::Init()
                                        cis.MA3method,
                                        cis.MA3applyTo,
                                        cis.MA3shift,
-                                       UsedInEA);
+                                       UsedInEA);                                       
    #endif
 #else   
    medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
@@ -383,19 +422,22 @@ void MedianRenko::Deinit()
 {
    if(medianRenkoHandle == INVALID_HANDLE)
       return;
-      
-   if(IndicatorRelease(medianRenkoHandle))
+   
+   if(!usedByIndicatorOnRenkoChart)
+   {
+      if(IndicatorRelease(medianRenkoHandle))
 #ifdef P_RENKO_BR
-      Print("P-RENKO BR indicator handle released");
+         Print("P-RENKO BR indicator handle released");
 #else   
-      Print("Median Renko indicator handle released");
+         Print("Median Renko indicator handle released");
 #endif
-   else 
+      else 
 #ifdef P_RENKO_BR
-      Print("Failed to release P-RENKO BR indicator handle");
+         Print("Failed to release P-RENKO BR indicator handle");
 #else   
-      Print("Failed to release Median Renko indicator handle");
+         Print("Failed to release Median Renko indicator handle");
 #endif
+   }
 }
 
 //
@@ -505,6 +547,14 @@ bool MedianRenko::GetBuySellVolumeBreakdown(double &buy[], double &sell[], doubl
       return false;
 
 #ifdef P_RENKO_BR
+   #ifdef P_RENKO_BR_PRO
+   if(CopyBuffer(medianRenkoHandle,RENKO_BUY_VOLUME,start,count,b) == -1)
+      return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_SELL_VOLUME,start,count,s) == -1)
+      return false;
+   if(CopyBuffer(medianRenkoHandle,RENKO_BUYSELL_VOLUME,start,count,bs) == -1)
+      return false;
+   #endif
 #else
    if(CopyBuffer(medianRenkoHandle,RENKO_BUY_VOLUME,start,count,b) == -1)
       return false;
@@ -689,3 +739,66 @@ bool MedianRenko::GetChannel(double &HighArray[], double &MidArray[], double &Lo
 #endif
 }
 
+void MedianRenko::Debug(RENKO_SETTINGS &s, CHART_INDICATOR_SETTINGS &cis)
+{
+   int h = FileOpen("MedianRenkoDebug.txt",FILE_WRITE|FILE_ANSI);
+   if(h == INVALID_HANDLE)
+      return;
+
+   FileWriteString(h,"barSizeInTicks = "+(string)s.barSizeInTicks+"\n");
+   FileWriteString(h,"retracementFactor = "+(string)s.retracementFactor+"\n");
+   FileWriteString(h,"symmetricalReversals = "+(string)s.symetricalReversals+"\n");
+   FileWriteString(h,"showWicks = "+(string)s.showWicks+"\n");
+   FileWriteString(h,"atrEnabled = "+(string)s.atrEnabled+"\n");
+   FileWriteString(h,"atrPeriod = "+(string)s.atrPeriod+"\n");
+   FileWriteString(h,"atrPercentage = "+(string)s.atrPercentage+"\n");
+   FileWriteString(h,"showNumberOfDays = "+(string)s.showNumberOfDays+"\n");
+   FileWriteString(h,"applyOffsetToFirstBar = "+(string)s.applyOffsetToFirstBar+"\n");
+   FileWriteString(h,"offsetValue = "+(string)s.offsetValue+"\n");
+   FileWriteString(h,"resetOpenOnNewTradingDay = "+(string)s.resetOpenOnNewTradingDay+"\n");
+   /*                                  cis.MA1on, 
+                                       cis.MA1period,
+                                       cis.MA1method,
+                                       cis.MA1applyTo,
+                                       cis.MA1shift,
+                                       cis.MA2on,
+                                       cis.MA2period,
+                                       cis.MA2method,
+                                       cis.MA2applyTo,
+                                       cis.MA2shift,
+                                       cis.MA3on,
+                                       cis.MA3period,
+                                       cis.MA3method,
+                                       cis.MA3applyTo,
+                                       cis.MA3shift,
+                                       cis.ShowChannel,
+                                       cis.DonchianPeriod,
+                                       cis.BBapplyTo,
+                                       cis.BollingerBandsPeriod,
+                                       cis.BollingerBandsDeviations,
+                                       cis.SuperTrendPeriod,
+                                       cis.SuperTrendMultiplier,
+   */
+   FileWriteString(h,"DisplayAsBarChart = "+(string)DisplayAsBarChart);
+   FileWriteString(h,"UsedInEA = "+(string)UsedInEA);
+   FileClose(h);
+}
+
+int MedianRenko::GetIndicatorHandle(void)
+{
+   int i = ChartIndicatorsTotal(0,0);
+   int j=0;
+   
+   while(j < i)
+   {
+      string iName = ChartIndicatorName(0,0,j);
+      if(StringFind(iName,CUSTOM_CHART_NAME) != -1)
+      {
+         Print("Using handle of "+iName);
+         return ChartIndicatorGet(0,0,iName);   
+      }   
+      j++;
+   }
+   
+   return INVALID_HANDLE;
+}
