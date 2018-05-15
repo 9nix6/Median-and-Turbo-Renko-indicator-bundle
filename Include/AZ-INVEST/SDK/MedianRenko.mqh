@@ -10,11 +10,11 @@
    #ifdef P_RENKO_BR_PRO
       #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
    #else
-   //  #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.02" 
-      #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.03" 
+   //   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay202" 
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay203" 
    #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 
@@ -160,7 +160,6 @@ int MedianRenko::Init()
          //      
          medianRenkoHandle = GetIndicatorHandle();
          return medianRenkoHandle;
-
       }
    
       if(!medianRenkoSettings.Load())
@@ -191,7 +190,6 @@ int MedianRenko::Init()
          //      
          medianRenkoHandle = GetIndicatorHandle();
          return medianRenkoHandle;
-
       }
       else
       {
@@ -275,6 +273,8 @@ int MedianRenko::Init()
                                        cis.SuperTrendMultiplier,
                                        "",
                                        DisplayAsBarChart,
+                                       DisplayAsBarChart,
+                                       ShiftObj,
                                        UsedInEA);   
    #else
       medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
@@ -313,6 +313,7 @@ int MedianRenko::Init()
                                        cis.MA3method,
                                        cis.MA3applyTo,
                                        cis.MA3shift,
+                                       ShiftObj,
                                        UsedInEA);                                       
    #endif
 #else   
@@ -343,10 +344,12 @@ int MedianRenko::Init()
                                        LowThresholdIndicatorColor,
                                        showCurrentBarOpenTime,
                                        InfoTextColor,
-                                       UseSoundSignalOnNewBar,
-                                       OnlySignalReversalBars,
+                                       NewBarAlert,
+                                       ReversalBarAlert,
+                                       MaCrossAlert,
                                        UseAlertWindow,
-                                       SendPushNotifications,
+                                       UseSound,    
+                                       UsePushNotifications,
                                        SoundFileBull,
                                        SoundFileBear,
                                        cis.MA1on, 
@@ -374,6 +377,7 @@ int MedianRenko::Init()
                                        cis.SuperTrendMultiplier,
                                        "",
                                        DisplayAsBarChart,
+                                       ShiftObj,
                                        UsedInEA);
 #endif                                       
       

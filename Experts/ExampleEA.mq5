@@ -1,6 +1,6 @@
-#property copyright "Copyright 2017, AZ-iNVEST"
+#property copyright "Copyright 2017-18, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "2.05"
+#property version   "2.06"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -32,7 +32,7 @@ MedianRenko * medianRenko;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(); 
+   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
    if(medianRenko == NULL)
       return(INIT_FAILED);
    
@@ -162,9 +162,9 @@ void OnTick()
       // GetBuySellVolumeBreakdown(long &buy[], long &sell[], long &buySell[], int start, int count)
       // method. Example below:
       
-      long buyVolume[];      // This array will store the values of the BUY volume 
-      long sellVolume[];     // This array will store the values of the SELL volume
-      long buySellVolume[];  // This array will store the values of the BUY/SELL volume
+      double buyVolume[];      // This array will store the values of the BUY volume 
+      double sellVolume[];     // This array will store the values of the SELL volume
+      double buySellVolume[];  // This array will store the values of the BUY/SELL volume
       
       // When you add BUY, SELL and BUY/SELL volume numbers for a bar they will be equal 
       // to the Real Volume number that can be accessed using the

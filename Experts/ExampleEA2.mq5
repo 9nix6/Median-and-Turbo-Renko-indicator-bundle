@@ -1,6 +1,6 @@
-#property copyright "Copyright 2017, AZ-iNVEST"
+#property copyright "Copyright 2017-18, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.00"
+#property version   "1.10"
 #property description "Example EA: Trading based on Renko SuperTrend signals." 
 #property description "One trade at a time. Each trade has TP & SL" 
 
@@ -16,7 +16,7 @@
 
 input double   InpLotSize = 0.1;
 input int      InpSLPoints = 200;
-input int      InpTPPoints = 600;
+input int      InpTPPoints = 400;
 
 input ulong    InpMagicNumber=5150;
 input ulong    InpDeviationPoints = 0;
@@ -39,7 +39,7 @@ ulong currentTicket;
 // the MedianRenko indicator attached.
 //
 
-#define SHOW_INDICATOR_INPUTS
+//#define SHOW_INDICATOR_INPUTS
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -61,7 +61,7 @@ CMarketOrder * marketOrder;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(); 
+   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true); 
    if(medianRenko == NULL)
       return(INIT_FAILED);
    
@@ -70,7 +70,7 @@ int OnInit()
       return(INIT_FAILED);
    
    //
-   //  Init MarketOrder class - used for placing market ortders.
+   //  Init MarketOrder class - used for placing market orders.
    //
    
    CMarketOrderParameters params;

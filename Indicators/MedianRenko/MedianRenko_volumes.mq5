@@ -71,7 +71,9 @@ int OnCalculate(const int rates_total,
    //
    
    if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   {
       return(0);
+   }
    
    //
    // Make the following modifications in the code below:

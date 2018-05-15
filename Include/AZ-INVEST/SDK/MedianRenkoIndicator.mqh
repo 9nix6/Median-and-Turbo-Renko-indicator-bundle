@@ -126,7 +126,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       Canvas_RatesTotalChangedBy(_rates_total);   
       IsNewBar = medianRenko.IsNewBar();   
       
-      firstRun = false;
+      //firstRun = false;
    }
 
    if(!CheckStatus())
@@ -137,6 +137,8 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       medianRenko = new MedianRenko(UseOnRenkoChart);
       if(medianRenko != NULL)
          medianRenko.Init();
+      
+      Print("CheckStatus block failed");
       
       return false;
    }
@@ -153,13 +155,23 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    ArraySetAsSeries(this.Sell_volume,false);   
    ArraySetAsSeries(this.BuySell_volume,false);   
 
-   bool needsReload  = (NeedsReload() || (!this.dataReady)); 
-      
-   if(needsReload)
+   if(firstRun)
+   {
+      GetOLHC(0,_rates_total);
+      firstRun = false;   
+      NeedsReload();
+   }
+           
+   if(NeedsReload() || !this.dataReady)
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
-      return false;
+      
+      if(NeedsReload() || !this.dataReady)
+      {
+         Print("NeedsReload/DataReady block failed");      
+         return false;
+      }      
    }                    
          
    /*
@@ -221,7 +233,6 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       return true;
    } 
 
-   
    //
    // Only recalculate last bar
    //
