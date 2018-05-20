@@ -14,7 +14,7 @@
    //   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay203" 
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay204" 
    #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 
@@ -242,7 +242,7 @@ int MedianRenko::Init()
                                        LowThresholdIndicatorColor,
                                        //showCurrentBarOpenTime,
                                        InfoTextColor,
-                                       UseSoundSignalOnNewBar,
+                                       NewBarAlert,
                                        //OnlySignalReversalBars,
                                        //UseAlertWindow,
                                        //SendPushNotifications,
@@ -295,7 +295,7 @@ int MedianRenko::Init()
                                        HighThresholdIndicatorColor,
                                        LowThresholdIndicatorColor,
                                        InfoTextColor,
-                                       UseSoundSignalOnNewBar,
+                                       NewBarAlert,
                                        SoundFileBull,
                                        SoundFileBear,
                                        cis.MA1on, 
@@ -409,6 +409,7 @@ bool MedianRenko::Reload()
 {
    if(medianRenkoSettings.Changed())
    {
+      Deinit();
       if(Init() == INVALID_HANDLE)
          return false;
       
@@ -442,6 +443,8 @@ void MedianRenko::Deinit()
          Print("Failed to release Median Renko indicator handle");
 #endif
    }
+
+   medianRenkoHandle = INVALID_HANDLE;
 }
 
 //

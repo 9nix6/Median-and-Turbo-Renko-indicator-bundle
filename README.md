@@ -13,7 +13,7 @@ The created EA will automatically acquire the settings used on the Renko chart i
 
 **ExampleEA2.mq5** - An example EA utilizing the Super Trend indicator on Renko to make trading decisions also showing the use of methods included in the MedianRenko class library
 
-**ExampleEA3.mq5** - An example showing the use of additional indicators (included in the MedianRenko folder) in your EA. MedianRenko_RSI indicator is used in the example (RSI values are outputted to log).
+**ExampleEA3.mq5** - An example showing the use of additional indicators (included in the Indicators/MedianRenko folder) in your EA. MedianRenko_RSI indicator is used in the example (RSI values are outputted to log).
 
 ## Installation
 

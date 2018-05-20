@@ -14,7 +14,7 @@ input int InpRSIPeriod=14; // RSI Period
 // the MedianRenko indicator attached.
 //
 
-//#define SHOW_INDICATOR_INPUTS
+#define SHOW_INDICATOR_INPUTS
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -52,6 +52,7 @@ int OnInit()
    //  NOTE: The indicator does not need to be attached to the chart.
    //
    
+//   RsiHandle = iCustom(_Symbol,_Period,"MedianRenko\\Indicators\\MedianRenko_RSI",InpRSIPeriod,true);
    RsiHandle = iCustom(_Symbol,_Period,"MedianRenko\\MedianRenko_RSI",InpRSIPeriod,true);
       
    return(INIT_SUCCEEDED);

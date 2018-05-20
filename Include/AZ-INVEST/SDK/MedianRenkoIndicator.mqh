@@ -2,8 +2,7 @@
 #property link      "http://www.az-invest.eu"
 #property version   "2.02"
 
-input bool UseOnRenkoChart = true; // Use this indicator on Renko chart
-
+input bool UseOnRenkoChart = false; // Use this indicator on Renko chart handle
 #include <AZ-INVEST/SDK/MedianRenko.mqh>
 
 class MedianRenkoIndicator
@@ -45,7 +44,7 @@ class MedianRenkoIndicator
       void     SetGetTimeFlag() { this.getTime = true; };
       
       bool     OnCalculate(const int rates_total,const int prev_calculated, const datetime &_Time[]);
-      int      GetPrevCalculated() { return prev_calculated; };     
+      int      GetPrevCalculated() { return this.prev_calculated; };     
       void     BufferShiftLeft(double &buffer[]);
       
       
@@ -89,6 +88,8 @@ MedianRenkoIndicator::MedianRenkoIndicator(void)
 
 MedianRenkoIndicator::~MedianRenkoIndicator(void)
 {
+   medianRenko.Deinit();
+
    if(medianRenko != NULL)
    {
       medianRenko.Deinit();
@@ -172,6 +173,9 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
          Print("NeedsReload/DataReady block failed");      
          return false;
       }      
+      
+      Print("NeedsReload/DataReady block calculated");      
+      return true;
    }                    
          
    /*

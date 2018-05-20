@@ -1,4 +1,4 @@
-#property copyright "Copyright 2017-18, AZ-iNVEST"
+#property copyright "Copyright 2017-2018, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
 #property version   "1.10"
 #property description "Example EA: Trading based on Renko SuperTrend signals." 
@@ -39,7 +39,7 @@ ulong currentTicket;
 // the MedianRenko indicator attached.
 //
 
-//#define SHOW_INDICATOR_INPUTS
+#define SHOW_INDICATOR_INPUTS
 
 //
 // You need to include the MedianRenko.mqh header file
