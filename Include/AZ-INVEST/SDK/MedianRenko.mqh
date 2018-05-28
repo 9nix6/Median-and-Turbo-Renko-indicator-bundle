@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                       MedianRenko.mqh ver:2.01.1 |
+//|                                       MedianRenko.mqh ver:2.01.2 |
 //|                                        Copyright 2017, AZ-iNVEST |
 //|                                          http://www.az-invest.eu |
 //+------------------------------------------------------------------+
@@ -8,10 +8,11 @@
 
 #ifdef P_RENKO_BR
    #ifdef P_RENKO_BR_PRO
-      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
+   //   #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
+      #define RENKO_INDICATOR_NAME "P-RENKO BR Pro" 
    #else
-      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.03" 
-   //   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+   //   #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.03" 
+      #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
    //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay204" 
@@ -272,7 +273,6 @@ int MedianRenko::Init()
                                        cis.SuperTrendPeriod,
                                        cis.SuperTrendMultiplier,
                                        "",
-                                       DisplayAsBarChart,
                                        DisplayAsBarChart,
                                        ShiftObj,
                                        UsedInEA);   
