@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.00"
+#property version   "1.01"
 #property indicator_separate_window
 #property indicator_plots 0
 
@@ -19,8 +19,16 @@ MedianRenkoIndicator customChartIndicator;
 static long __chartId  = ChartID();
 static int  __subWinId = ChartWindowFind();
 
-input color InpTextColor = clrWhiteSmoke; // Font color
-input int   InpFontSize  = 9;             // Font size
+enum ENUM_DISPLAY_FORMAT
+{
+   DisplayFormat1 = 0,  // 25 Jan 10:55
+   DisplayFormat2,      // 25.01 10:55
+};
+
+input color                InpTextColor = clrWhiteSmoke;    // Font color
+input int                  InpFontSize  = 9;                // Font size
+input int                  InpSpacing = 8;                  // Date/Time spacing
+input ENUM_DISPLAY_FORMAT  InpDispFormat = DisplayFormat1;  // Display format
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -36,12 +44,13 @@ int OnInit()
    //---
 
    customChartIndicator.SetGetTimeFlag();   
+
    return(INIT_SUCCEEDED);
 }
   
 void OnDeinit(const int r)
 {
-   DeleteDateTimeMarkers(); 
+   ObjectsDeleteAll(__chartId,PREFIX_SEED);
 }
 //+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |
@@ -67,7 +76,7 @@ int OnCalculate(const int rates_total,
 
    if((start == 0) || customChartIndicator.IsNewBar)
    {
-      DeleteDateTimeMarkers(); 
+      ObjectsDeleteAll(__chartId,PREFIX_SEED);
       DrawTimeLine(0,rates_total,time);            
    }
 
@@ -90,7 +99,7 @@ void DrawTimeLine(const int nPosition, const int nRatesCount, const datetime &ca
       else
          _start = true;
          
-      if(c%8 == 0)
+      if(c%InpSpacing == 0)
          DrawDateTimeMarker(i,curBarTime,canvasTime[i]);
       
       if(_start)
@@ -109,33 +118,6 @@ bool DrawDateTimeMarker(const int ix, const datetime timeStamp, const datetime c
    return true;
 }  
 
-void DeleteDateTimeMarkers()
-{
-   int      c = 0;
-   int      count = ObjectsTotal(__chartId,__subWinId,OBJ_TEXT);
-   string   list[];
-   
-   ArrayResize(list,count,0);
-   
-   for(int i = 0; i < count; i++)
-   {
-      string objName = ObjectName(__chartId,i);
-      if(StringFind(objName,PREFIX_SEED) == 0)
-      {
-         list[c] = objName;
-         c++;
-      }  
-   }
-   if(c == 0)
-      return;
-      
-   ArrayResize(list,c);
-   for(int i = c-1; i >= 0; i--)
-      ObjectDelete(__chartId,list[i]);
-   
-   ArrayFree(list);
-}
-
 string NormalizeTime(datetime _dt)
 {
    static string  __months[12] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
@@ -145,7 +127,13 @@ string NormalizeTime(datetime _dt)
    string minute = (dt.min<10)  ? ("0"+(string)dt.min)  : (string)dt.min;
    string hour   = (dt.hour<10) ? ("0"+(string)dt.hour) : (string)dt.hour;
    
-   return ( "'"+(string)dt.day+" "+__months[dt.mon-1]+" "+hour+":"+minute );
+   if(InpDispFormat == DisplayFormat1)
+      return ( "'"+(string)dt.day+" "+__months[dt.mon-1]+" "+hour+":"+minute );
+   else 
+   {
+      string month = (dt.mon<10) ? ("0"+(string)dt.mon) : (string)dt.mon;
+      return ( "'"+(string)dt.day+"."+month+" "+hour+":"+minute );
+   }
 }
 
 //
