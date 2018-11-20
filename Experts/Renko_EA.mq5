@@ -25,7 +25,7 @@
    #endif
 #endif
 
-#include "EA_Logic.mqh"
+#include "Renko_EA_Logic.mqh"
 
 //
 //  Inputs
