@@ -302,7 +302,11 @@ void MedianRenkoIndicator::OLHCShiftRight()
       return;
    
    count--;
-   
+
+#ifdef SDK_DEBUG   
+   Print(__FUNCTION__," called with count = ",count);
+#endif   
+
    for(int i=count; i>0; i--)
    {
       this.Open[i] = this.Open[i-1];
@@ -387,7 +391,8 @@ bool MedianRenkoIndicator::Canvas_IsNewBar(const datetime &_Time[])
    
    static datetime prevTime = 0;
    
-   if(prevTime != now)
+//   if(prevTime != now)
+   if(prevTime < now)
    {
       prevTime = now;
       return true;
