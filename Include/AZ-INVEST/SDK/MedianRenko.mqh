@@ -8,14 +8,14 @@
 
 #ifdef P_RENKO_BR
    #ifdef P_RENKO_BR_PRO
-   //   #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
-      #define RENKO_INDICATOR_NAME "P-RENKO BR Pro" 
+      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Pro" 
+   //   #define RENKO_INDICATOR_NAME "P-RENKO BR Pro" 
    #else
-   //   #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.03" 
-      #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
+      #define RENKO_INDICATOR_NAME "MedianRenko\\P-RENKO BR Lite 2.03" 
+   //   #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay204" 
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay205" 
    #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 
