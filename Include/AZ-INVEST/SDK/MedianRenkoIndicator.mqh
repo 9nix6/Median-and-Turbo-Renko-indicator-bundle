@@ -191,7 +191,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    if(change != 0)
    {
       #ifdef DISPLAY_DEBUG_MSG
-         Print("rates total changed to:"+_rates_total);
+         PrintFormat("rates total changed to: %d",_rates_total);
       #endif
       if(change == 1)
       {
@@ -203,7 +203,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       else      
       {
          #ifdef DISPLAY_DEBUG_MSG
-            Print("changed by "+change+" => getting ALL");
+            PrintFormat("changed by %d => getting ALL",change);
          #endif
          GetOLHC(0,_rates_total);
       }
@@ -494,7 +494,7 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
    if(_count < count)
    {
       #ifdef DISPLAY_DEBUG_MSG
-         Print("Fixing offset (req:"+count+" res:"+_count+")");
+         PrintFormat("Fixing offset (req:%d res:%d)",count,_count);
       #endif
       
       ArrayInitialize(o,0x0);
