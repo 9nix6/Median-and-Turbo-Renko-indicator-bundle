@@ -60,6 +60,7 @@ enum PRICE_TYPE
 // Initialize MedianRenko indicator for data processing 
 // according to settings of the MedianRenko indicator already on chart
 //
+
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
 MedianRenkoIndicator medianRenkoIndicator;
 

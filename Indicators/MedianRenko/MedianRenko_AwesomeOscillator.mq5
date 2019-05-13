@@ -57,10 +57,10 @@ void OnInit()
    //ExtFastSMAHandle=iMA(NULL,0,5,0,MODE_SMA,PRICE_MEDIAN);
    //ExtSlowSMAHandle=iMA(NULL,0,34,0,MODE_SMA,PRICE_MEDIAN);
    // renko mod
-   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
-   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
-//   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
-//   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
+//   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
+//   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
+   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
+   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
 //---- initialization done
   }
 //+------------------------------------------------------------------+

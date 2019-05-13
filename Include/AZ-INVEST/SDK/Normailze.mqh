@@ -30,14 +30,14 @@ double VtcNormalizeLots(string symbol, double lotsToNormalize)
       return lotsMin;
 
 	int a = (int)(lotsToNormalize / lotsStep);
-	double Lots = a * lotsStep;
+	double normalizedLots = a * lotsStep;
 
-   if(Lots < lotsMin)
-      Lots = lotsMin;
-   if(Lots > lotsMax)
-      Lots = lotsMax;
+   if(normalizedLots < lotsMin)
+      normalizedLots = lotsMin;
+   if(normalizedLots > lotsMax)
+      normalizedLots = lotsMax;
 	
-	return Lots;
+	return normalizedLots;
 }
 
 double NormalizePrice(string symbol, double price, double tick = 0)

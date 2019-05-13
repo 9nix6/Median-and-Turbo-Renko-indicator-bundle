@@ -39,6 +39,7 @@ double                   ExtMacdBuffer[];
 // Initialize MedianRenko indicator for data processing 
 // according to settings of the MedianRenko indicator already on chart
 //
+#define DISPLAY_DEBUG_MSG
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
 MedianRenkoIndicator medianRenkoIndicator;
@@ -84,8 +85,10 @@ int OnCalculate(const int rates_total,const int prev_calculated,
    //
    
    if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,Time))
+   {
+      Print("ret => false");
       return(0);
-   
+   }
    //
    // Make the following modifications in the code below:
    //
@@ -138,6 +141,7 @@ int OnCalculate(const int rates_total,const int prev_calculated,
       limit=0;
    else limit=_prev_calculated-1;
 //--- calculate MACD
+
    for(int i=limit;i<rates_total && !IsStopped();i++)
    {
       ExtMacdBuffer[i] = ExtFastMaBuffer[i]-ExtSlowMaBuffer[i];
