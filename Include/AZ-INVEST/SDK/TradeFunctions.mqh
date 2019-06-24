@@ -485,7 +485,7 @@ bool CMarketOrder::Modify(ulong ticket, bool stopsInPips = true, int stoploss = 
       //do checks
       if(!tradingChecks.OkToModifyPosition(symbol,ticket,priceSL,priceTP))
       {
-         Alert("Unable to modify: "+tradingChecks.GetCheckErrorToString());
+         Print("Unable to modify: "+tradingChecks.GetCheckErrorToString());
          return false;
       }
       
@@ -532,7 +532,7 @@ bool CMarketOrder::Modify(ulong ticket, double priceSL=0,double priceTP=0)
       //do checks
       if(!tradingChecks.OkToModifyPosition(symbol,ticket,priceSL,priceTP))
       {
-         Alert("Unable to modify: "+tradingChecks.GetCheckErrorToString());
+         Print("Unable to modify: "+tradingChecks.GetCheckErrorToString());
          return false;
       }
    
@@ -623,7 +623,7 @@ bool CMarketOrder::ModifyPending(ulong ticket, double entry, bool stopsInPips = 
       //do checks
       if(!tradingChecks.OkToModifyOrder(symbol,ticket,entry,priceSL,priceTP))
       {
-         Alert("Unable to modify: "+tradingChecks.GetCheckErrorToString());
+         Print("Unable to modify: "+tradingChecks.GetCheckErrorToString());
          return false;
       }
       
@@ -671,7 +671,7 @@ bool CMarketOrder::ModifyPending(ulong ticket, double entry, double priceSL=0, d
       //do checks
       if(!tradingChecks.OkToModifyOrder(symbol,ticket,entry,priceSL,priceTP))
       {
-         Alert("Unable to modify: "+tradingChecks.GetCheckErrorToString());
+         Print("Unable to modify: "+tradingChecks.GetCheckErrorToString());
          return false;
       }
    

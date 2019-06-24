@@ -15,7 +15,7 @@
       #define RENKO_INDICATOR_NAME "P-RENKO BR Lite" 
    #endif
 #else
-   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay211" 
+   //#define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay212" 
    #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
 #endif
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2018, Artur Zas
+// Copyright 2018-2019, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -198,7 +198,7 @@ bool CEaLogic::Initialize(CEaLogicPartameters &inputParams, MedianRenko *_median
       return false;
    }
          
-   timeControl.SetTValidTraingHours(this.inputs.StartTrading,this.inputs.EndTrading);     
+   timeControl.SetValidTraingHours(this.inputs.StartTrading,this.inputs.EndTrading);     
       
    return true;
 }

@@ -1,5 +1,11 @@
-#property copyright "Copyright 2017, AZ-iNVEST"
-#property link      "http://www.az-invest.eu"
+//
+// Copyright 2017-2019, Artur Zas
+// https://www.az-invest.eu 
+// https://www.mql5.com/en/users/arturz
+//
+
+#property copyright "Copyright 2017-2019, Artur Zas"
+#property link      "https://www.mql5.com/en/users/arturz"
 #property version   "2.05"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 

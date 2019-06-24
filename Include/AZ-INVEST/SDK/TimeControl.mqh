@@ -1,5 +1,5 @@
 //
-// Copyright 2018, Artur Zas
+// Copyright 2018-19, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -8,26 +8,45 @@ class CTimeControl
 {
    private:
    
-      string start;
-      string end;
+      int      startHH;
+      int      startMM;
+      string   start;
+      
+      int      endHH;
+      int      endMM;
+      string   end;
+      
+      bool     scheduleEnabled;
       
    public:
    
-      void SetTValidTraingHours(string _from = "0:00", string _to = "0:00");
+      void SetValidTraingHours(string _from = "0:00", string _to = "0:00");
       bool IsTradingTimeValid();
+      bool IsScheduleEnabled() { return scheduleEnabled; };
+      void StringToHHMM(string value, int &HH, int &MM);
 };
 
-
-void CTimeControl::SetTValidTraingHours(string _from,string _to)
+void CTimeControl::SetValidTraingHours(string _from,string _to)
 {
    this.start = _from;
-   this.end   = _to;   
+   this.end = _to;
+   
+   StringToHHMM(this.start, this.startHH, this.startMM);
+   StringToHHMM(this.end, this.endHH, this.endMM);
+   
+   if(this.startHH == 0 && this.startMM == 0 && this.endHH == 0 && this.endMM == 0)
+   {
+      scheduleEnabled = false;
+   }
+   else
+   {
+      scheduleEnabled = true;
+   }
 }
 
 bool CTimeControl::IsTradingTimeValid()
 {
-   if(((this.start == "0") && (this.end == "0")) || 
-      ((this.start == "0:00") && (this.end == "0:00")))
+   if(scheduleEnabled == false)
          return true;
 
    datetime now = TimeCurrent();
@@ -42,4 +61,16 @@ bool CTimeControl::IsTradingTimeValid()
       return true;
    else
       return false;
+}
+
+void CTimeControl::StringToHHMM(string value, int &HH, int &MM) 
+{
+   MqlDateTime temp;
+   TimeToStruct(TimeCurrent(),temp);
+   
+   datetime fullDateTime = StringToTime((string)temp.year+"."+(string)temp.mon+"."+(string)temp.day+" "+value); 
+   TimeToStruct(fullDateTime,temp);
+   
+   HH = temp.hour;
+   MM = temp.min;
 }

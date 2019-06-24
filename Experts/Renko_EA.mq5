@@ -1,5 +1,5 @@
 //
-// Copyright 2018, Artur Zas
+// Copyright 2018-2019, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -36,16 +36,16 @@ input ENUM_TRADING_MODE InpMode              = TRADING_MODE_ALL;  // Trading mod
 input int               InpOpenXSignal       = 1;                 // Open signal confirmation bars
 input int               InpCloseXSignal      = 1;                 // Close signal confirmation bars
 input double            InpLotSize           = 0.1;               // Lot size
-input int               InpSLPoints          = 200;               // StopLoss (Points) [ 0 - OFF ]
-input int               InpTPPoints          = 400;               // TakeProfit (Points) [ 0 - OFF ]
+input int               InpSLPoints          = 200;               // StopLoss (Points) [ 0 = OFF ]
+input int               InpTPPoints          = 400;               // TakeProfit (Points) [ 0 = OFF ]
 input string            InpComment1          = "Stop & Reverse";  // *** If StopLoss & TakeProfit = 0
-input int               InpBEPoints          = 0;                 // BreakEven (Points) [ 0 - OFF ]
-input int               InpTrailByPoints     = 100;               // Trail by (Points) [ 0 - OFF ]
+input int               InpBEPoints          = 0;                 // BreakEven (Points) [ 0 = OFF ]
+input int               InpTrailByPoints     = 100;               // Trail by (Points) [ 0 = OFF ]
 input int               InpTrailStartPoints  = 150;               // Start trailing after (Points)
 
 input string            InpStart             = "9:00";            // Start trading at (24h server time)
 input string            InpEnd               = "16:00";           // End trading at (24h server time)
-input string            InpComment2          = "Always trade";    // *** If Start = "0" & End = "0"
+input string            InpComment2          = "Always trade";    // *** If Start = "0" & End = "0" =>
 input bool              InpCloseTradesEOD    = false;             // Close trades at "End trading" time
 
 input ENUM_FILTER_MODE  InpMA1Filter         = FILTER_MODE_OFF;   // Use MA1 filter
