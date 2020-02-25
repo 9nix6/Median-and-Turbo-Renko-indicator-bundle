@@ -1,6 +1,6 @@
 #property copyright "Copyright 2017-2019, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.04"
+#property version   "1.10"
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
@@ -16,21 +16,21 @@
 // ----------------------------------------------------------------------
 //
 
-//#define SHOW_INDICATOR_INPUTS
+#define SHOW_INDICATOR_INPUTS
 
 // Include all needed files
 
 #ifdef EA_ON_RANGE_BARS
    #include <AZ-INVEST/SDK/RangeBars.mqh>
-   RangeBars *customBars = new RangeBars();
+   RangeBars customBars = RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 #endif
 #ifdef EA_ON_RENKO
    #include <AZ-INVEST/SDK/MedianRenko.mqh>
-   MedianRenko *customBars = new MedianRenko();
+   MedianRenko customBars = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 #endif
 #ifdef EA_ON_XTICK_CHART
    #include <AZ-INVEST/SDK/TickChart.mqh>
-   TickChart *customBars = new TickChart();
+   TickChart customBars = TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 #endif
 
 #include <AZ-INVEST/SDK/TimeControl.mqh>
@@ -73,15 +73,27 @@ ENUM_POSITION_TYPE currentPositionType;
 ENUM_POSITION_TYPE signal;
 ENUM_POSITION_TYPE validation;
 
+#ifdef EA_ON_RANGE_BARS
+   static int _MA1 = RANGEBAR_MA1;
+   static int _MA2 = RANGEBAR_MA2;
+#endif
+#ifdef EA_ON_RENKO
+   static int _MA1 = RENKO_MA1;
+   static int _MA2 = RENKO_MA2;
+#endif
+#ifdef EA_ON_XTICK_CHART
+   static int _MA1 = TICKCHART_MA1;
+   static int _MA2 = TICKCHART_MA2;
+#endif
+
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   if(customBars == NULL)
-      return(INIT_FAILED);
-      
    customBars.Init();
+   if(customBars.GetHandle() == INVALID_HANDLE)
+      return(INIT_FAILED);
    
    signal = POSITION_TYPE_NONE;
    
@@ -109,8 +121,6 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    customBars.Deinit();
-   if(customBars != NULL)
-      delete customBars;
       
    if(marketOrder != NULL)
       delete marketOrder;
@@ -122,7 +132,7 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   if(customBars == NULL || marketOrder == NULL)
+   if(marketOrder == NULL)
       return;
       
    if(customBars.IsNewBar())
@@ -154,11 +164,11 @@ void OnTick()
       //  Get moving average values for current, last completed bar and the bar before that...
       //
       
-      if(!customBars.GetMA1(MA1,startAtBar,numberOfBars))
+      if(!customBars.GetMA(_MA1,MA1,startAtBar,numberOfBars))
       {
          Print("Error getting values from MA1");
       }
-      else if(!customBars.GetMA2(MA2,startAtBar,numberOfBars))
+      else if(!customBars.GetMA(_MA2,MA2,startAtBar,numberOfBars))
       {
          Print("Error getting values from MA2");      
       }

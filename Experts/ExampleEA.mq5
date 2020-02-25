@@ -6,7 +6,7 @@
 
 #property copyright "Copyright 2017-2019, Artur Zas"
 #property link      "https://www.mql5.com/en/users/arturz"
-#property version   "2.05"
+#property version   "3.00"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -31,17 +31,13 @@
 //  Example shown in OnInit & OnDeinit functions below:
 //
 
-MedianRenko * medianRenko;
+MedianRenko medianRenko = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
-   if(medianRenko == NULL)
-      return(INIT_FAILED);
-   
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -57,11 +53,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   if(medianRenko != NULL)
-   {
-      medianRenko.Deinit();
-      delete medianRenko;
-   }
+   medianRenko.Deinit();
    
    //
    //  your custom code goes here...
@@ -102,7 +94,7 @@ void OnTick()
       double MA1[]; // array to be filled by values of the first moving average
       double MA2[]; // array to be filled by values of the second moving average
       
-      if(medianRenko.GetMA1(MA1,startAtBar,numberOfBars) && medianRenko.GetMA2(MA2,startAtBar,numberOfBars))
+      if(medianRenko.GetMA(RENKO_MA1,MA1,startAtBar,numberOfBars) && medianRenko.GetMA(RENKO_MA2,MA2,startAtBar,numberOfBars))
       {
          //
          // Values are stored in the MA1 and MA2 arrays and are now ready for use
@@ -188,62 +180,22 @@ void OnTick()
       }
       
       //
-      // Getting Donchain channel values is done using the
-      // GetDonchian(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
-      // method. Example below:
+      // Getting the values of the channel indicator (Donchain, Bullinger Bands, Keltner or Super Trend) is done using
+      // GetChannel(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
+      // Example below:
       //
       
-      double HighArray[];  // This array will store the values of the high band
-      double MidArray[];   // This array will store the values of the middle band
-      double LowArray[];   // This array will store the values of the low band
+      double HighArray[];  // This array will store the values of the channel's high band
+      double MidArray[];   // This array will store the values of the channel's middle band
+      double LowArray[];   // This array will store the values of the channel's low band
       
       startAtBar   = 1;    // get values starting from the last completed bar.
       numberOfBars = 20;   // gat a total of 20 values (for 20 bars starting from bar 1 (last completed))
       
-      if(medianRenko.GetDonchian(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
+      if(medianRenko.GetChannel(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
       {
          //
-         // Apply your Donchian channel logic here...
-         //
-      }
-      
-      //
-      // Getting Bollinger Bands values is done using the
-      // GetBollingerBands(double &HighArray[], double &MidArray[], double &LowArray[], int start, int count) 
-      // method. Example below:
-      //
-      
-      // HighArray[] array will store the values of the high band
-      // MidArray[] array will store the values of the middle band
-      // LowArray[] array will store the values of the low band
-      
-      startAtBar   = 1;    // get values starting from the last completed bar.
-      numberOfBars = 10;   // gat a total of 10 values (for 10 bars starting from bar 1 (last completed))     
-      
-      if(medianRenko.GetBollingerBands(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
-      {
-         //
-         // Apply your Bollinger Bands logic here...
-         //
-      } 
-
-      //
-      // Getting SuperTrend values is done using the
-      // GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count) 
-      // method. Example below:
-      //
-      
-      // HighArray[] array will store the values of the high SuperTrend line
-      // MidArray[] array will store the values of the SuperTrend value
-      // LowArray[] array will store the values of the low SuperTrend line
-      
-      startAtBar   = 1;   // get values starting from the last completed bar.
-      numberOfBars = 3;   // gat a total of 3 values (for 3 bars starting from bar 1 (last completed))     
-      
-      if(medianRenko.GetSuperTrend(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
-      {
-         //
-         // Apply your SuperTrend logic here...
+         // Apply your logic here...
          //
       } 
       

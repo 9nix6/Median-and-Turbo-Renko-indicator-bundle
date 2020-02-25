@@ -26,7 +26,7 @@ double ExtColorBuffer[];
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //
 //
@@ -71,33 +71,36 @@ int OnCalculate(const int rates_total,
    // Process data through MedianRenko indicator
    //
    
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -107,10 +110,10 @@ int OnCalculate(const int rates_total,
    if(_prev_calculated==0)
      {
       //--- set first candle
-      ExtLBuffer[0]=medianRenkoIndicator.Low[0];
-      ExtHBuffer[0]=medianRenkoIndicator.High[0];
-      ExtOBuffer[0]=medianRenkoIndicator.Open[0];
-      ExtCBuffer[0]=medianRenkoIndicator.Close[0];
+      ExtLBuffer[0]=customChartIndicator.Low[0];
+      ExtHBuffer[0]=customChartIndicator.High[0];
+      ExtOBuffer[0]=customChartIndicator.Open[0];
+      ExtCBuffer[0]=customChartIndicator.Close[0];
       limit=1;
      }
    else limit=_prev_calculated-1;
@@ -119,9 +122,9 @@ int OnCalculate(const int rates_total,
    for(i=limit;i<rates_total && !IsStopped();i++)
      {
       double haOpen=(ExtOBuffer[i-1]+ExtCBuffer[i-1])/2;
-      double haClose=(medianRenkoIndicator.Open[i]+medianRenkoIndicator.High[i]+medianRenkoIndicator.Low[i]+medianRenkoIndicator.Close[i])/4;
-      double haHigh=MathMax(medianRenkoIndicator.High[i],MathMax(haOpen,haClose));
-      double haLow=MathMin(medianRenkoIndicator.Low[i],MathMin(haOpen,haClose));
+      double haClose=(customChartIndicator.Open[i]+customChartIndicator.High[i]+customChartIndicator.Low[i]+customChartIndicator.Close[i])/4;
+      double haHigh=MathMax(customChartIndicator.High[i],MathMax(haOpen,haClose));
+      double haLow=MathMin(customChartIndicator.Low[i],MathMin(haOpen,haClose));
 
       ExtLBuffer[i]=haLow;
       ExtHBuffer[i]=haHigh;

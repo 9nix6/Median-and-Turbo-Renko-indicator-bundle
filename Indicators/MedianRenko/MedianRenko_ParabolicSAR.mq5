@@ -30,7 +30,7 @@ double               ExtSarMaximum;
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //
 //
@@ -95,33 +95,36 @@ int OnCalculate(const int rates_total,
    // Process data through MedianRenko indicator
    //
    
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -136,12 +139,12 @@ int OnCalculate(const int rates_total,
       pos=1;
       ExtAFBuffer[0]=ExtSarStep;
       ExtAFBuffer[1]=ExtSarStep;
-      ExtSARBuffer[0]=medianRenkoIndicator.High[0];
+      ExtSARBuffer[0]=customChartIndicator.High[0];
       ExtLastRevPos=0;
       ExtDirectionLong=false;
-      ExtSARBuffer[1]=GetHigh(pos,ExtLastRevPos,medianRenkoIndicator.High);
-      ExtEPBuffer[0]=medianRenkoIndicator.Low[pos];
-      ExtEPBuffer[1]=medianRenkoIndicator.Low[pos];
+      ExtSARBuffer[1]=GetHigh(pos,ExtLastRevPos,customChartIndicator.High);
+      ExtEPBuffer[0]=customChartIndicator.Low[pos];
+      ExtEPBuffer[1]=customChartIndicator.Low[pos];
      }
 //---main cycle
    for(int i=pos;i<rates_total-1 && !IsStopped();i++)
@@ -149,24 +152,24 @@ int OnCalculate(const int rates_total,
       //--- check for reverse
       if(ExtDirectionLong)
         {
-         if(ExtSARBuffer[i]>medianRenkoIndicator.Low[i])
+         if(ExtSARBuffer[i]>customChartIndicator.Low[i])
            {
             //--- switch to SHORT
             ExtDirectionLong=false;
-            ExtSARBuffer[i]=GetHigh(i,ExtLastRevPos,medianRenkoIndicator.High);
-            ExtEPBuffer[i]=medianRenkoIndicator.Low[i];
+            ExtSARBuffer[i]=GetHigh(i,ExtLastRevPos,customChartIndicator.High);
+            ExtEPBuffer[i]=customChartIndicator.Low[i];
             ExtLastRevPos=i;
             ExtAFBuffer[i]=ExtSarStep;
            }
         }
       else
         {
-         if(ExtSARBuffer[i]<medianRenkoIndicator.High[i])
+         if(ExtSARBuffer[i]<customChartIndicator.High[i])
            {
             //--- switch to LONG
             ExtDirectionLong=true;
-            ExtSARBuffer[i]=GetLow(i,ExtLastRevPos,medianRenkoIndicator.Low);
-            ExtEPBuffer[i]=medianRenkoIndicator.High[i];
+            ExtSARBuffer[i]=GetLow(i,ExtLastRevPos,customChartIndicator.Low);
+            ExtEPBuffer[i]=customChartIndicator.High[i];
             ExtLastRevPos=i;
             ExtAFBuffer[i]=ExtSarStep;
            }
@@ -175,9 +178,9 @@ int OnCalculate(const int rates_total,
       if(ExtDirectionLong)
         {
          //--- check for new High
-         if(medianRenkoIndicator.High[i]>ExtEPBuffer[i-1] && i!=ExtLastRevPos)
+         if(customChartIndicator.High[i]>ExtEPBuffer[i-1] && i!=ExtLastRevPos)
            {
-            ExtEPBuffer[i]=medianRenkoIndicator.High[i];
+            ExtEPBuffer[i]=customChartIndicator.High[i];
             ExtAFBuffer[i]=ExtAFBuffer[i-1]+ExtSarStep;
             if(ExtAFBuffer[i]>ExtSarMaximum)
                ExtAFBuffer[i]=ExtSarMaximum;
@@ -194,15 +197,15 @@ int OnCalculate(const int rates_total,
          //--- calculate SAR for tomorrow
          ExtSARBuffer[i+1]=ExtSARBuffer[i]+ExtAFBuffer[i]*(ExtEPBuffer[i]-ExtSARBuffer[i]);
          //--- check for SAR
-         if(ExtSARBuffer[i+1]>medianRenkoIndicator.Low[i] || ExtSARBuffer[i+1]>medianRenkoIndicator.Low[i-1])
-            ExtSARBuffer[i+1]=MathMin(medianRenkoIndicator.Low[i],medianRenkoIndicator.Low[i-1]);
+         if(ExtSARBuffer[i+1]>customChartIndicator.Low[i] || ExtSARBuffer[i+1]>customChartIndicator.Low[i-1])
+            ExtSARBuffer[i+1]=MathMin(customChartIndicator.Low[i],customChartIndicator.Low[i-1]);
         }
       else
         {
          //--- check for new Low
-         if(medianRenkoIndicator.Low[i]<ExtEPBuffer[i-1] && i!=ExtLastRevPos)
+         if(customChartIndicator.Low[i]<ExtEPBuffer[i-1] && i!=ExtLastRevPos)
            {
-            ExtEPBuffer[i]=medianRenkoIndicator.Low[i];
+            ExtEPBuffer[i]=customChartIndicator.Low[i];
             ExtAFBuffer[i]=ExtAFBuffer[i-1]+ExtSarStep;
             if(ExtAFBuffer[i]>ExtSarMaximum)
                ExtAFBuffer[i]=ExtSarMaximum;
@@ -219,8 +222,8 @@ int OnCalculate(const int rates_total,
          //--- calculate SAR for tomorrow
          ExtSARBuffer[i+1]=ExtSARBuffer[i]+ExtAFBuffer[i]*(ExtEPBuffer[i]-ExtSARBuffer[i]);
          //--- check for SAR
-         if(ExtSARBuffer[i+1]<medianRenkoIndicator.High[i] || ExtSARBuffer[i+1]<medianRenkoIndicator.High[i-1])
-            ExtSARBuffer[i+1]=MathMax(medianRenkoIndicator.High[i],medianRenkoIndicator.High[i-1]);
+         if(ExtSARBuffer[i+1]<customChartIndicator.High[i] || ExtSARBuffer[i+1]<customChartIndicator.High[i-1])
+            ExtSARBuffer[i+1]=MathMax(customChartIndicator.High[i],customChartIndicator.High[i-1]);
         }
      }
 //---- OnCalculate done. Return new prev_calculated.

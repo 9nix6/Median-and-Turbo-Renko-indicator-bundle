@@ -1,5 +1,5 @@
 //
-// Copyright 2018-2019, Artur Zas
+// Copyright 2018-2020, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -67,10 +67,10 @@ CEaLogic eaLogic;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true); 
+   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
    if(medianRenko == NULL)
       return(INIT_FAILED);
-   
+      
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -114,7 +114,7 @@ void OnDeinit(const int reason)
    {
       medianRenko.Deinit();
       delete medianRenko;
-   }   
+   }
 }
 
 //+------------------------------------------------------------------+

@@ -68,7 +68,7 @@ double Level[];
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //
 //
@@ -99,7 +99,7 @@ int OnInit()
             
    IndicatorSetString(INDICATOR_SHORTNAME," VEMA Wilder's DMI ("+string(AdxPeriod)+")");
    
-   medianRenkoIndicator.SetGetVolumesFlag();
+   customChartIndicator.SetGetVolumesFlag();
    
    return(0);
 }
@@ -140,33 +140,36 @@ int OnCalculate(const int rates_total,
    // Process data through MedianRenko indicator
    //
    
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -183,16 +186,16 @@ int OnCalculate(const int rates_total,
    double sf = 1.0/(double)AdxPeriod;
    for (int i=(int)MathMax(_prev_calculated-1,1); i<rates_total; i++)
    {
-         double currTR  = MathMax(medianRenkoIndicator.High[i],medianRenkoIndicator.Close[i-1])-MathMin(medianRenkoIndicator.Low[i],medianRenkoIndicator.Close[i-1]);
-         double DeltaHi = medianRenkoIndicator.High[i] - medianRenkoIndicator.High[i-1];
-         double DeltaLo = medianRenkoIndicator.Low[i-1] - medianRenkoIndicator.Low[i];
+         double currTR  = MathMax(customChartIndicator.High[i],customChartIndicator.Close[i-1])-MathMin(customChartIndicator.Low[i],customChartIndicator.Close[i-1]);
+         double DeltaHi = customChartIndicator.High[i] - customChartIndicator.High[i-1];
+         double DeltaLo = customChartIndicator.Low[i-1] - customChartIndicator.Low[i];
          double plusDM  = 0.00;
          double minusDM = 0.00;
          double vol;
          switch(VolumeType)
             {
-               case vol_ticks: vol = (double)medianRenkoIndicator.Tick_volume[i]; break;
-               case vol_real:  vol = (double)medianRenkoIndicator.Real_volume[i]; break;
+               case vol_ticks: vol = (double)customChartIndicator.Tick_volume[i]; break;
+               case vol_real:  vol = (double)customChartIndicator.Real_volume[i]; break;
                default:        vol = 1;
             }
             if ((DeltaHi > DeltaLo) && (DeltaHi > 0)) plusDM  = DeltaHi;

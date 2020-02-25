@@ -1,5 +1,5 @@
 //
-// Copyright 2018-2019, Artur Zas
+// Copyright 2018-2020, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -296,7 +296,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(this.inputs.MA1Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA1(MA1,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA1,MA1,_startAtBar,_numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA1");
          return;
@@ -305,7 +305,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
 
    if(this.inputs.MA2Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA2(MA2,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA2,MA2,_startAtBar,_numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA2");
          return;
@@ -314,7 +314,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(this.inputs.MA3Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA3(MA3,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA3,MA3,_startAtBar,_numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA3");
          return;
@@ -323,7 +323,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(this.inputs.SuperTrendFilter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetSuperTrend(HighArray,SuperTrend,LowArray,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetChannel(HighArray,SuperTrend,LowArray,_startAtBar,_numberOfBars))
       {
          Print(__FUNCTION__," failed on GetSuprTrend");
          return;

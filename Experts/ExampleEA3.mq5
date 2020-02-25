@@ -6,7 +6,7 @@
 
 #property copyright "Copyright 2017-2019, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.00"
+#property version   "1.10"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 #property description "as well as external indicators attached to the RenkoCharts" 
 
@@ -34,7 +34,7 @@ input int InpRSIPeriod=14; // RSI Period
 //  Example shown in OnInit & OnDeinit functions below:
 //
 
-MedianRenko * medianRenko;
+MedianRenko medianRenko = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 int RsiHandle = -1;
 
 double RsiBuffer[];              // This array will store the RSI values for the renko chart
@@ -45,22 +45,10 @@ MqlRates RenkoRatesInfoArray[];  // This array will store the MqlRates data for 
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
-   if(medianRenko == NULL)
-      return(INIT_FAILED);
-   
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
    
-   //
-   //  Getting the handle to the RSI indicator on renko chart
-   //  NOTE: The indicator does not need to be attached to the chart.
-   //
-   
-   //RsiHandle = iCustom(_Symbol,_Period,"MedianRenko\\Indicators\\MedianRenko_RSI",InpRSIPeriod,true);
-   RsiHandle = iCustom(_Symbol,_Period,"MedianRenko\\MedianRenko_RSI",InpRSIPeriod,true);
-      
    return(INIT_SUCCEEDED);
 }
 //+------------------------------------------------------------------+
@@ -68,12 +56,8 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   if(medianRenko != NULL)
-   {
-      medianRenko.Deinit();
-      delete medianRenko;
-   }
-   
+   medianRenko.Deinit();
+
    //
    //  your custom code goes here...
    //
@@ -89,6 +73,17 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   //
+   // Initialize all additional indicators here! (not in the OnInit() function).
+   // Otherwise they will not work in the backtest.
+   // When backtesting please select the "Daily" timeframe.
+   //
+   
+   if(RsiHandle == INVALID_HANDLE)
+   {
+      RsiHandle = iCustom(_Symbol, _Period, "MedianRenko\\MedianRenko_RSI", InpRSIPeriod, true);
+   }
+
    //
    // It is considered good trading & EA coding practice to perform calculations
    // when a new bar is fully formed. 

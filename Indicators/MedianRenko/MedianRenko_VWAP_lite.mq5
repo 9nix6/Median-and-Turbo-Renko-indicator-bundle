@@ -62,7 +62,7 @@ enum PRICE_TYPE
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 #define VWAP_Daily "cc__VWAP_Daily"
 #define VWAP_Weekly "cc__VWAP_Weekly"
@@ -170,8 +170,8 @@ int OnInit()
       ObjectSetString(0,VWAP_Monthly,OBJPROP_TEXT," ");
      }
 
-   medianRenkoIndicator.SetGetVolumesFlag();
-   medianRenkoIndicator.SetGetTimeFlag();
+   customChartIndicator.SetGetVolumesFlag();
+   customChartIndicator.SetGetTimeFlag();
    
    return(INIT_SUCCEEDED);
   }
@@ -203,33 +203,36 @@ int OnCalculate(const int       rates_total,
    // Process data through MedianRenko indicator
    //
 
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -241,7 +244,7 @@ int OnCalculate(const int       rates_total,
       LastTimePeriod=PERIOD_CURRENT;
      }
 
-   if(rates_total>_prev_calculated || bIsFirstRun || Calc_Every_Tick || (_prev_calculated == 0) || medianRenkoIndicator.IsNewBar) 
+   if(rates_total>_prev_calculated || bIsFirstRun || Calc_Every_Tick || (_prev_calculated == 0) || customChartIndicator.IsNewBar) 
      {
       nIdxDaily = 0;
       nIdxWeekly = 0;
@@ -261,22 +264,22 @@ int OnCalculate(const int       rates_total,
          VWAP_Buffer_Weekly[nIdx]=EMPTY_VALUE;
          VWAP_Buffer_Monthly[nIdx]=EMPTY_VALUE;
 
-         if(medianRenkoIndicator.Time[nIdx] < 86400)
+         if(customChartIndicator.Time[nIdx] < 86400)
             continue;
             
-         if(CreateDateTime(DAILY,medianRenkoIndicator.Time[nIdx])!=dtLastDay) 
+         if(CreateDateTime(DAILY,customChartIndicator.Time[nIdx])!=dtLastDay) 
            {
             nIdxDaily=nIdx;
             nSumDailyTPV = 0;
             nSumDailyVol = 0;
            }
-         if(CreateDateTime(WEEKLY,medianRenkoIndicator.Time[nIdx])!=dtLastWeek) 
+         if(CreateDateTime(WEEKLY,customChartIndicator.Time[nIdx])!=dtLastWeek) 
            {
             nIdxWeekly=nIdx;
             nSumWeeklyTPV = 0;
             nSumWeeklyVol = 0;
            }
-         if(CreateDateTime(MONTHLY,medianRenkoIndicator.Time[nIdx])!=dtLastMonth) 
+         if(CreateDateTime(MONTHLY,customChartIndicator.Time[nIdx])!=dtLastMonth) 
            {
             nIdxMonthly=nIdx;
             nSumMonthlyTPV = 0;
@@ -290,45 +293,45 @@ int OnCalculate(const int       rates_total,
          switch(Price_Type) 
            {
             case OPEN:
-               nPriceArr[nIdx]=medianRenkoIndicator.Open[nIdx];
+               nPriceArr[nIdx]=customChartIndicator.Open[nIdx];
                break;
             case CLOSE:
-               nPriceArr[nIdx]=medianRenkoIndicator.Close[nIdx];
+               nPriceArr[nIdx]=customChartIndicator.Close[nIdx];
                break;
             case HIGH:
-               nPriceArr[nIdx]=medianRenkoIndicator.High[nIdx];
+               nPriceArr[nIdx]=customChartIndicator.High[nIdx];
                break;
             case LOW:
-               nPriceArr[nIdx]=medianRenkoIndicator.Low[nIdx];
+               nPriceArr[nIdx]=customChartIndicator.Low[nIdx];
                break;
             case HIGH_LOW:
-               nPriceArr[nIdx]=(medianRenkoIndicator.High[nIdx]+medianRenkoIndicator.Low[nIdx])/2;
+               nPriceArr[nIdx]=(customChartIndicator.High[nIdx]+customChartIndicator.Low[nIdx])/2;
                break;
             case OPEN_CLOSE:
-               nPriceArr[nIdx]=(medianRenkoIndicator.Open[nIdx]+medianRenkoIndicator.Close[nIdx])/2;
+               nPriceArr[nIdx]=(customChartIndicator.Open[nIdx]+customChartIndicator.Close[nIdx])/2;
                break;
             case CLOSE_HIGH_LOW:
-               nPriceArr[nIdx]=(medianRenkoIndicator.Close[nIdx]+medianRenkoIndicator.High[nIdx]+medianRenkoIndicator.Low[nIdx])/3;
+               nPriceArr[nIdx]=(customChartIndicator.Close[nIdx]+customChartIndicator.High[nIdx]+customChartIndicator.Low[nIdx])/3;
                break;
             case OPEN_CLOSE_HIGH_LOW:
-               nPriceArr[nIdx]=(medianRenkoIndicator.Open[nIdx]+medianRenkoIndicator.Close[nIdx]+medianRenkoIndicator.High[nIdx]+medianRenkoIndicator.Low[nIdx])/4;
+               nPriceArr[nIdx]=(customChartIndicator.Open[nIdx]+customChartIndicator.Close[nIdx]+customChartIndicator.High[nIdx]+customChartIndicator.Low[nIdx])/4;
                break;
             default:
-               nPriceArr[nIdx]=(medianRenkoIndicator.Close[nIdx]+medianRenkoIndicator.High[nIdx]+medianRenkoIndicator.Low[nIdx])/3;
+               nPriceArr[nIdx]=(customChartIndicator.Close[nIdx]+customChartIndicator.High[nIdx]+customChartIndicator.Low[nIdx])/3;
                break;
            }
 
-         if((medianRenkoIndicator.Tick_volume[nIdx] > 0) &&  (medianRenkoIndicator.Real_volume[nIdx] == 0))
+         if((customChartIndicator.Tick_volume[nIdx] > 0) &&  (customChartIndicator.Real_volume[nIdx] == 0))
          {
-           // Print("tick vol = "+medianRenkoIndicator.Tick_volume[nIdx]);
-            nTotalTPV[nIdx] = (nPriceArr[nIdx] * medianRenkoIndicator.Tick_volume[nIdx]);
-            nTotalVol[nIdx] = (double)medianRenkoIndicator.Tick_volume[nIdx];
+           // Print("tick vol = "+customChartIndicator.Tick_volume[nIdx]);
+            nTotalTPV[nIdx] = (nPriceArr[nIdx] * customChartIndicator.Tick_volume[nIdx]);
+            nTotalVol[nIdx] = (double)customChartIndicator.Tick_volume[nIdx];
          } 
-         else if(medianRenkoIndicator.Real_volume[nIdx] && medianRenkoIndicator.Tick_volume[nIdx] ) 
+         else if(customChartIndicator.Real_volume[nIdx] && customChartIndicator.Tick_volume[nIdx] ) 
          {
-           // Print("real vol = "+medianRenkoIndicator.Real_volume[nIdx]);
-            nTotalTPV[nIdx] = (nPriceArr[nIdx] * medianRenkoIndicator.Real_volume[nIdx]);
-            nTotalVol[nIdx] = (double)medianRenkoIndicator.Real_volume[nIdx];
+           // Print("real vol = "+customChartIndicator.Real_volume[nIdx]);
+            nTotalTPV[nIdx] = (nPriceArr[nIdx] * customChartIndicator.Real_volume[nIdx]);
+            nTotalVol[nIdx] = (double)customChartIndicator.Real_volume[nIdx];
          }
          
          if(Enable_Daily && (nIdx>=nIdxDaily)) 
@@ -376,9 +379,9 @@ int OnCalculate(const int       rates_total,
               }
            }
 
-         dtLastDay=CreateDateTime(DAILY,medianRenkoIndicator.Time[nIdx]);
-         dtLastWeek=CreateDateTime(WEEKLY,medianRenkoIndicator.Time[nIdx]);
-         dtLastMonth=CreateDateTime(MONTHLY,medianRenkoIndicator.Time[nIdx]);
+         dtLastDay=CreateDateTime(DAILY,customChartIndicator.Time[nIdx]);
+         dtLastWeek=CreateDateTime(WEEKLY,customChartIndicator.Time[nIdx]);
+         dtLastMonth=CreateDateTime(MONTHLY,customChartIndicator.Time[nIdx]);
         }
 
       bIsFirstRun=false;

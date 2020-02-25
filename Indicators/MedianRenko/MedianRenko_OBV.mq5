@@ -24,7 +24,7 @@ double                    ExtOBVBuffer[];
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator customIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //
 //
@@ -42,7 +42,7 @@ void OnInit()
    IndicatorSetInteger(INDICATOR_DIGITS,0);
 //---- OnInit done
 
-   customIndicator.SetGetVolumesFlag();
+   customChartIndicator.SetGetVolumesFlag();
    
   }
 //+------------------------------------------------------------------+
@@ -63,10 +63,13 @@ int OnCalculate(const int rates_total,
    // Process data through MedianRenko indicator
    //
    
-   if(!customIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
       return(0);
       
-   int _prev_calculated = customIndicator.GetPrevCalculated();
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
+      return(0);
+      
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
 
    //
    //
@@ -84,14 +87,14 @@ int OnCalculate(const int rates_total,
      {
       pos=1;
       if(InpVolumeType==VOLUME_TICK)
-         ExtOBVBuffer[0]=(double)customIndicator.Tick_volume[0];
-      else ExtOBVBuffer[0]=(double)customIndicator.Real_volume[0];
+         ExtOBVBuffer[0]=(double)customChartIndicator.Tick_volume[0];
+      else ExtOBVBuffer[0]=(double)customChartIndicator.Real_volume[0];
      }
 //--- main cycle
    if(InpVolumeType==VOLUME_TICK)
-      CalculateOBV(pos,rates_total,customIndicator.Close,customIndicator.Tick_volume);
+      CalculateOBV(pos,rates_total,customChartIndicator.Close,customChartIndicator.Tick_volume);
    else
-      CalculateOBV(pos,rates_total,customIndicator.Close,customIndicator.Real_volume);
+      CalculateOBV(pos,rates_total,customChartIndicator.Close,customChartIndicator.Real_volume);
 //---- OnCalculate done. Return new prev_calculated.
    return(rates_total);
   }

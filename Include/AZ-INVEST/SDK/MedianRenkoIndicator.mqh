@@ -1,8 +1,10 @@
-#property copyright "Copyright 2017, AZ-iNVEST"
+#property copyright "Copyright 2018-2020, Level Up Software"
 #property link      "http://www.az-invest.eu"
-#property version   "2.02"
+#property version   "3.00"
 
-input bool UseOnRenkoChart = false; // Use this indicator on Renko chart handle
+input bool UseOnRenkoChart = true; // Use this indicator on Renko chart handle
+
+//#define DEVELOPER_VERSION
 #include <AZ-INVEST/SDK/MedianRenko.mqh>
 
 class MedianRenkoIndicator
@@ -18,7 +20,11 @@ class MedianRenkoIndicator
       bool                 useAppliedPrice;
       ENUM_APPLIED_PRICE   applied_price;
       
+      bool                 firstRun;
       bool                 dataReady;
+      
+      datetime             prevTime;
+      int                  prevRatesTotal;
       
    public:
    
@@ -33,8 +39,21 @@ class MedianRenkoIndicator
       double   Buy_volume[];
       double   Sell_volume[];
       double   BuySell_volume[];
+
+      datetime GetTime(int index) { return GetArrayValueDateTime(Time, index); };
+      double   GetOpen(int index) { return GetArrayValueDouble(Open, index); };
+      double   GetLow(int index) { return GetArrayValueDouble(Low, index); };
+      double   GetHigh(int index) { return GetArrayValueDouble(High, index); };
+      double   GetClose(int index) { return GetArrayValueDouble(Close, index); };
+      double   GetPrice(int index) { return GetArrayValueDouble(Price, index); };
+      long     GetTick_volume(int index) { return GetArrayValueLong(Tick_volume, index); };
+      long     GetReal_volume(int index) { return GetArrayValueLong(Real_volume, index); };
+      double   GetBuy_volume(int index)  { return GetArrayValueDouble(Buy_volume, index); };
+      double   GetSell_volume(int index) { return GetArrayValueDouble(Sell_volume, index); };
+      double   GetBuySell_volume(int index) { return GetArrayValueDouble(BuySell_volume, index); };
+
       bool     IsNewBar;
-   
+
                MedianRenkoIndicator();
                ~MedianRenkoIndicator();
                
@@ -43,11 +62,12 @@ class MedianRenkoIndicator
       void     SetGetVolumeBreakdownFlag() { this.getVolumeBreakdown = true; };
       void     SetGetTimeFlag() { this.getTime = true; };
       
-      bool     OnCalculate(const int rates_total,const int prev_calculated, const datetime &_Time[]);
-      int      GetPrevCalculated() { return this.prev_calculated; };     
+      bool     OnCalculate(const int _rates_total,const int _prev_calculated, const datetime &_Time[], const double &_Close[]);
+      void     OnDeinit(const int reason);
+      bool     BufferSynchronizationCheck(const double &buffer[]);      
+      int      GetPrevCalculated() { return prev_calculated; };     
+      int      GetRatesTotal() { return ArraySize(Open); };     
       void     BufferShiftLeft(double &buffer[]);
-      
-      
       
    private:
   
@@ -68,28 +88,29 @@ class MedianRenkoIndicator
 
       ENUM_TIMEFRAMES TFMigrate(int tf);
       datetime iTime(string symbol,int tf,int index);
+      double GetArrayValueDouble(double &arr[], int index);
+      long GetArrayValueLong(long &arr[], int index);
+      datetime GetArrayValueDateTime(datetime &arr[], int index);
 };
 
 MedianRenkoIndicator::MedianRenkoIndicator(void)
 {
-   medianRenko = new MedianRenko(UseOnRenkoChart);
-   
+   medianRenko = new MedianRenko(UseOnRenkoChart);   
    if(medianRenko != NULL)
       medianRenko.Init();
-   else
-      Print("!Error constructing MedianRenkoIndicator");
       
    useAppliedPrice = false;
    getVolumes = false;
    getTime = false;
    
    dataReady = false;
+   firstRun = true;
+   prevTime = 0;
+   prevRatesTotal = 0;
 }
 
 MedianRenkoIndicator::~MedianRenkoIndicator(void)
 {
-   medianRenko.Deinit();
-
    if(medianRenko != NULL)
    {
       medianRenko.Deinit();
@@ -117,17 +138,13 @@ bool MedianRenkoIndicator::NeedsReload(void)
    return false;
 }
 
-bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_calculated, const datetime &_Time[])
+bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_calculated, const datetime &_Time[], const double &_Close[])
 {   
-   static bool firstRun = true;
-
    if(firstRun)
    {
       Canvas_IsNewBar(_Time); 
       Canvas_RatesTotalChangedBy(_rates_total);   
       IsNewBar = medianRenko.IsNewBar();   
-      
-      //firstRun = false;
    }
 
    if(!CheckStatus())
@@ -140,7 +157,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
          medianRenko.Init();
       
       Print("CheckStatus block failed");
-      
+            
       return false;
    }
 
@@ -160,39 +177,25 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    {
       GetOLHC(0,_rates_total);
       firstRun = false;   
-      NeedsReload();
    }
            
    if(NeedsReload() || !this.dataReady)
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
-      
-      if(NeedsReload() || !this.dataReady)
-      {
-         Print("NeedsReload/DataReady block failed");      
-         return false;
-      }      
-      
-      Print("NeedsReload/DataReady block calculated");      
-      return true;
-   }                    
-         
-   /*
-   if(needsReload || IsNewBar || canvasIsNewTime || (change != 0))
-   {  
-      Print("reload="+needsReload+", renkoisnewbar="+IsNewBar+", canvasIsNewTime="+canvasIsNewTime+", change="+change);
-         GetOLHC(0,_rates_total);
-         this.prev_calculated = ArraySize(this.Open);
-      return true;         
-   }
-   */
+      firstRun = true; 
+      ChartSetSymbolPeriod(ChartID(), _Symbol, _Period); // try to force reload
+      return false;
+   }                                      
+
    bool change = Canvas_RatesTotalChangedBy(_rates_total);
+
    if(change != 0)
    {
       #ifdef DISPLAY_DEBUG_MSG
-         PrintFormat("rates total changed to: %d",_rates_total);
+         Print("rates total changed to:"+_rates_total);
       #endif
+
       if(change == 1)
       {
          #ifdef DISPLAY_DEBUG_MSG
@@ -203,11 +206,12 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       else      
       {
          #ifdef DISPLAY_DEBUG_MSG
-            PrintFormat("changed by %d => getting ALL",change);
+            Print("changed by "+change+" => getting ALL");
          #endif
          GetOLHC(0,_rates_total);
       }
-      this.prev_calculated = 0;//_prev_calculated; 
+
+      this.prev_calculated = 0;
       Canvas_IsNewBar(_Time);
       return true;   
    }
@@ -221,7 +225,7 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
       {
          GetOLHC(0,_rates_total);
          this.prev_calculated = 0;
-         return true;   ///////// false         
+         return true; 
       }
 
       OLHCShiftRight();
@@ -234,9 +238,10 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    {
       GetOLHC(0,_rates_total);
       this.prev_calculated = 0;
+      firstRun = true; 
       return true;
    } 
-
+   
    //
    // Only recalculate last bar
    //
@@ -244,6 +249,19 @@ bool MedianRenkoIndicator::OnCalculate(const int _rates_total,const int _prev_ca
    GetOLHC(0,0);
    this.prev_calculated = _prev_calculated;
 
+   return true;
+}
+
+bool MedianRenkoIndicator::BufferSynchronizationCheck(const double &buffer[])
+{
+   if(ArraySize(buffer) != ArraySize(Close))
+   {
+      #ifdef DEVELOPER_VERSION
+         Print("### buffers out of synch - refreshing...");
+      #endif
+      return false;
+   }
+   
    return true;
 }
 
@@ -303,20 +321,19 @@ void MedianRenkoIndicator::OLHCShiftRight()
    
    count--;
 
-#ifdef SDK_DEBUG   
-   Print(__FUNCTION__," called with count = ",count);
-#endif   
-
    for(int i=count; i>0; i--)
    {
       this.Open[i] = this.Open[i-1];
       this.High[i] = this.High[i-1];
       this.Low[i] = this.Low[i-1];
       this.Close[i] = this.Close[i-1];
+
       if(getTime)
          this.Time[i] = this.Time[i-1];
+
       if(useAppliedPrice)
          this.Price[i] = this.Price[i-1];
+
       if(getVolumes)
       {
          this.Tick_volume[i] = this.Tick_volume[i-1];
@@ -366,8 +383,10 @@ void MedianRenkoIndicator::OLHCResize()
    
    if(getTime)
       ArrayResize(this.Time,count+1);
-   if(useAppliedPrice)
+
+   if(useAppliedPrice)   
       ArrayResize(this.Price,count+1);
+
    if(getVolumes)
    {
       ArrayResize(this.Tick_volume,count+1);
@@ -389,10 +408,7 @@ bool MedianRenkoIndicator::Canvas_IsNewBar(const datetime &_Time[])
    datetime now = _Time[0]; 
    ArraySetAsSeries(_Time,false);    
    
-   static datetime prevTime = 0;
-   
-//   if(prevTime != now)
-   if(prevTime < now)
+   if(prevTime != now)
    {
       prevTime = now;
       return true;
@@ -403,8 +419,6 @@ bool MedianRenkoIndicator::Canvas_IsNewBar(const datetime &_Time[])
 
 bool MedianRenkoIndicator::Canvas_IsRatesTotalChanged(int ratesTotalNow)
 {
-   static int prevRatesTotal = 0;
-   
    if(prevRatesTotal == 0)
       prevRatesTotal = ratesTotalNow;
          
@@ -420,7 +434,6 @@ bool MedianRenkoIndicator::Canvas_IsRatesTotalChanged(int ratesTotalNow)
 int MedianRenkoIndicator::Canvas_RatesTotalChangedBy(int ratesTotalNow)
 {
    int changedBy = 0;
-   static int prevRatesTotal = 0;
    
    if(prevRatesTotal == 0)
       prevRatesTotal = ratesTotalNow;
@@ -478,6 +491,7 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
    handle = medianRenko.GetHandle();
    if(handle == INVALID_HANDLE)
       return -1;
+
    int _count = CopyBuffer(handle,RENKO_OPEN,start,count,temp);
    if(_count == -1)
    {
@@ -501,19 +515,23 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
       ArrayInitialize(l,0x0);
       ArrayInitialize(h,0x0);
       ArrayInitialize(c,0x0);
+
       if(getTime)
          ArrayInitialize(t,0x0);
+      
       if(getVolumes)
       {
          ArrayInitialize(tickVolume,0x0);
          ArrayInitialize(realVolume,0x0);
       }
+
       if(getVolumeBreakdown)
       {
          ArrayInitialize(buyVolume,0x0);
          ArrayInitialize(sellVolume,0x0);
          ArrayInitialize(buySellVolume,0x0);
       }
+
       // less data - indicator requres more
       
       ArrayCopy(o,temp,(count-_count),0);
@@ -528,6 +546,7 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
 
       if(CopyBuffer(handle,RENKO_CLOSE,start,_count,temp) == -1)
          return -1;
+
       ArrayCopy(c,temp,(count-_count),0);
       
       if(getTime)
@@ -695,10 +714,13 @@ int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double
    return _count;
 }
 
+// TFMigrate: 
+// https://www.mql5.com/en/forum/2842#comment_39496
+//
 ENUM_TIMEFRAMES MedianRenkoIndicator::TFMigrate(int tf)
-  {
+{
    switch(tf)
-     {
+   {
       case 0: return(PERIOD_CURRENT);
       case 1: return(PERIOD_M1);
       case 5: return(PERIOD_M5);
@@ -726,18 +748,30 @@ ENUM_TIMEFRAMES MedianRenkoIndicator::TFMigrate(int tf)
       case 16408: return(PERIOD_D1);
       case 32769: return(PERIOD_W1);
       case 49153: return(PERIOD_MN1);      
+
       default: return(PERIOD_CURRENT);
-     }
-  }
+   }
+}
 
 datetime MedianRenkoIndicator::iTime(string symbol,int tf,int index)
 {
-   if(index < 0) return(-1);
+   if(index < 0)
+   {
+      return(-1);
+   }
+   
    ENUM_TIMEFRAMES timeframe=TFMigrate(tf);
+   
    datetime Arr[];
-   if(CopyTime(symbol, timeframe, index, 1, Arr)>0)
-        return(Arr[0]);
-   else return(-1);
+   
+   if(CopyTime(symbol, timeframe, index, 1, Arr) > 0)
+   {
+      return(Arr[0]);
+   }
+   else 
+   {
+      return(-1);
+   }
 }
 
 //
@@ -792,3 +826,43 @@ void MedianRenkoIndicator::BufferShiftLeft(double &buffer[])
       buffer[i-1] = buffer[i];
 
 }
+
+long MedianRenkoIndicator::GetArrayValueLong(long &arr[], int index)
+{
+   int size  = ArraySize(arr);
+   if(index < size)
+   {
+       return(arr[index]);
+   } 
+   else    
+   {
+       return(false); 
+   }
+}
+
+double MedianRenkoIndicator::GetArrayValueDouble(double &arr[], int index)
+{
+   int size  = ArraySize(arr);
+   if(index < size)
+   {
+       return(arr[index]);
+   } 
+   else    
+   {
+       return(false); 
+   }
+}
+
+datetime MedianRenkoIndicator::GetArrayValueDateTime(datetime &arr[], int index)
+{
+   int size  = ArraySize(arr);
+   if(index < size)
+   {
+       return(arr[index]);
+   } 
+   else    
+   {
+       return(false); 
+   }
+}
+

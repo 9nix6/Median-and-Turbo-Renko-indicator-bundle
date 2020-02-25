@@ -19,21 +19,16 @@ double ExtAOBuffer[];
 double ExtColorBuffer[];
 double ExtFastBuffer[];
 double ExtSlowBuffer[];
-//--- handles for MAs
-int    ExtFastSMAHandle;
-int    ExtSlowSMAHandle;
 //--- bars minimum for calculation
 #define DATA_LIMIT 33
 
 //
-// Initialize MedianRenko indicator for data processing 
-// according to settings of the MedianRenko indicator already on chart
 //
 
+#include <MovingAverages.mqh>
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
-//
 //
 //
 
@@ -56,11 +51,8 @@ void OnInit()
 //--- get handles
    //ExtFastSMAHandle=iMA(NULL,0,5,0,MODE_SMA,PRICE_MEDIAN);
    //ExtSlowSMAHandle=iMA(NULL,0,34,0,MODE_SMA,PRICE_MEDIAN);
-   // renko mod
-//   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
-//   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
-   ExtFastSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",5,0,MODE_SMA,PRICE_MEDIAN,true);
-   ExtSlowSMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",34,0,MODE_SMA,PRICE_MEDIAN,true);
+// -- Set applied price to MEDIAN as required by AO indicator
+   customChartIndicator.SetUseAppliedPriceFlag(PRICE_MEDIAN);
 //---- initialization done
   }
 //+------------------------------------------------------------------+
@@ -82,48 +74,21 @@ int OnCalculate(const int rates_total,
    if(rates_total<=DATA_LIMIT)
       return(0);// not enough bars for calculation
 
-//--- not all data may be calculated
-   int calculated=BarsCalculated(ExtFastSMAHandle);
-   if(calculated<rates_total)
-     {
-      Print("Not all data of ExtFastSMAHandle is calculated (",calculated,"bars ). Error",GetLastError());
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
       return(0);
-     }
-   calculated=BarsCalculated(ExtSlowSMAHandle);
-   if(calculated<rates_total)
-     {
-      Print("Not all data of ExtSlowSMAHandle is calculated (",calculated,"bars ). Error",GetLastError());
-      return(0);
-     }
-//--- renko mod
-
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
   
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
 
-//--- we can copy not all data
-   int to_copy;
-   if(_prev_calculated>rates_total || _prev_calculated<0) to_copy=rates_total;
-   else
-     {
-      to_copy=rates_total-prev_calculated;
-      if(_prev_calculated>0) to_copy++;
-     }
-//--- get FastSMA buffer
+//--- get Fast MA buffer
+   if(IsStopped()) return(0); //Checking for stop flag   
+   SimpleMAOnBuffer(rates_total,_prev_calculated,0,5,customChartIndicator.Price,ExtFastBuffer);
+//--- get Slow MA buffer
    if(IsStopped()) return(0); //Checking for stop flag
-   if(CopyBuffer(ExtFastSMAHandle,0,0,to_copy,ExtFastBuffer)<=0)
-     {
-      Print("Getting fast SMA is failed! Error",GetLastError());
-      return(0);
-     }
-//--- get SlowSMA buffer
-   if(IsStopped()) return(0); //Checking for stop flag
-   if(CopyBuffer(ExtSlowSMAHandle,0,0,to_copy,ExtSlowBuffer)<=0)
-     {
-      Print("Getting slow SMA is failed! Error",GetLastError());
-      return(0);
-     }
+   SimpleMAOnBuffer(rates_total,_prev_calculated,0,35,customChartIndicator.Price,ExtSlowBuffer);
+
 //--- first calculation or number of bars was changed
    int i,limit;
    if(_prev_calculated<=DATA_LIMIT)

@@ -27,7 +27,7 @@ int    ExtArrowShift=-10;
 //
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //
 //
@@ -70,33 +70,36 @@ int OnCalculate(const int rates_total,const int prev_calculated,
    // Process data through MedianRenko indicator
    //
    
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,Time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,Time,Close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(Close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -119,13 +122,13 @@ int OnCalculate(const int rates_total,const int prev_calculated,
    for(i=limit; i<rates_total-3 && !IsStopped();i++)
      {
       //---- Upper Fractal
-      if(medianRenkoIndicator.High[i]>medianRenkoIndicator.High[i+1] && medianRenkoIndicator.High[i]>medianRenkoIndicator.High[i+2] && medianRenkoIndicator.High[i]>=medianRenkoIndicator.High[i-1] && medianRenkoIndicator.High[i]>=medianRenkoIndicator.High[i-2])
-         ExtUpperBuffer[i]=medianRenkoIndicator.High[i];
+      if(customChartIndicator.High[i]>customChartIndicator.High[i+1] && customChartIndicator.High[i]>customChartIndicator.High[i+2] && customChartIndicator.High[i]>=customChartIndicator.High[i-1] && customChartIndicator.High[i]>=customChartIndicator.High[i-2])
+         ExtUpperBuffer[i]=customChartIndicator.High[i];
       else ExtUpperBuffer[i]=EMPTY_VALUE;
 
       //---- Lower Fractal
-      if(medianRenkoIndicator.Low[i]<medianRenkoIndicator.Low[i+1] && medianRenkoIndicator.Low[i]<medianRenkoIndicator.Low[i+2] && medianRenkoIndicator.Low[i]<=medianRenkoIndicator.Low[i-1] && medianRenkoIndicator.Low[i]<=medianRenkoIndicator.Low[i-2])
-         ExtLowerBuffer[i]=medianRenkoIndicator.Low[i];
+      if(customChartIndicator.Low[i]<customChartIndicator.Low[i+1] && customChartIndicator.Low[i]<customChartIndicator.Low[i+2] && customChartIndicator.Low[i]<=customChartIndicator.Low[i-1] && customChartIndicator.Low[i]<=customChartIndicator.Low[i-2])
+         ExtLowerBuffer[i]=customChartIndicator.Low[i];
       else ExtLowerBuffer[i]=EMPTY_VALUE;
      }
 //--- OnCalculate done. Return new prev_calculated.

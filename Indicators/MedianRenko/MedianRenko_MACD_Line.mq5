@@ -9,27 +9,23 @@
 #include <MovingAverages.mqh>
 //--- indicator settings
 #property indicator_separate_window
-#property indicator_buffers 6
-#property indicator_plots   3
-#property indicator_type1   DRAW_HISTOGRAM
-#property indicator_type2   DRAW_HISTOGRAM
-#property indicator_type3   DRAW_LINE
-#property indicator_color1  Lime
-#property indicator_color2  Red
-#property indicator_color3  Red
+#property indicator_buffers 4
+#property indicator_plots   2
+#property indicator_type1   DRAW_LINE
+#property indicator_type2   DRAW_LINE
+#property indicator_color1  clrMagenta
+#property indicator_color2  clrBlue
 #property indicator_width1  2
 #property indicator_width2  2
-#property indicator_width3  2
-#property indicator_label1  "MACD Up"
-#property indicator_label2  "MACD Down"
-#property indicator_label3  "MACD Signal"
+#property indicator_label1  "Main"
+#property indicator_label2  "Signal"
 //--- input parameters
 input int                InpFastEMA=12;               // Fast EMA period
 input int                InpSlowEMA=26;               // Slow EMA period
 input int                InpSignalSMA=9;              // Signal SMA period
 //--- indicator buffers
-double                   ExtMacdBufferUp[];
-double                   ExtMacdBufferDn[];
+//double                   ExtMacdBufferUp[];
+//double                   ExtMacdBufferDn[];
 double                   ExtSignalBuffer[];
 double                   ExtFastMaBuffer[];
 double                   ExtSlowMaBuffer[];
@@ -39,7 +35,6 @@ double                   ExtMacdBuffer[];
 // Initialize MedianRenko indicator for data processing 
 // according to settings of the MedianRenko indicator already on chart
 //
-//#define DISPLAY_DEBUG_MSG
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
 MedianRenkoIndicator customChartIndicator;
@@ -54,12 +49,12 @@ MedianRenkoIndicator customChartIndicator;
 void OnInit()
   {
 //--- indicator buffers mapping
-   SetIndexBuffer(0,ExtMacdBufferUp,INDICATOR_DATA);
-   SetIndexBuffer(1,ExtMacdBufferDn,INDICATOR_DATA);
-   SetIndexBuffer(2,ExtSignalBuffer,INDICATOR_DATA);
-   SetIndexBuffer(3,ExtFastMaBuffer,INDICATOR_CALCULATIONS);
-   SetIndexBuffer(4,ExtSlowMaBuffer,INDICATOR_CALCULATIONS);
-   SetIndexBuffer(5,ExtMacdBuffer,INDICATOR_CALCULATIONS);
+   SetIndexBuffer(0,ExtMacdBuffer,INDICATOR_DATA);
+   SetIndexBuffer(1,ExtSignalBuffer,INDICATOR_DATA);
+   //SetIndexBuffer(2,ExtSignalBuffer,INDICATOR_DATA);
+   SetIndexBuffer(2,ExtFastMaBuffer,INDICATOR_CALCULATIONS);
+   SetIndexBuffer(3,ExtSlowMaBuffer,INDICATOR_CALCULATIONS);
+   //SetIndexBuffer(4,ExtMacdBuffer,INDICATOR_CALCULATIONS);
    
 //--- sets first bar from what index will be drawn
    PlotIndexSetInteger(2,PLOT_DRAW_BEGIN,InpSignalSMA-1);
@@ -81,7 +76,7 @@ int OnCalculate(const int rates_total,const int prev_calculated,
                 const int &Spread[])
   {
    //
-   // Process data through MedianRenko indicator
+   // Precoess data through MedianRenko indicator
    //
    
    if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,Time,Close))
@@ -89,35 +84,12 @@ int OnCalculate(const int rates_total,const int prev_calculated,
       
    if(!customChartIndicator.BufferSynchronizationCheck(Close))
       return(0);
-      
-   //
-   // Make the following modifications in the code below:
-   //
-   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
-   //
-   // customChartIndicator.Open[] should be used instead of open[]
-   // customChartIndicator.Low[] should be used instead of low[]
-   // customChartIndicator.High[] should be used instead of high[]
-   // customChartIndicator.Close[] should be used instead of close[]
-   //
-   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
-   //
-   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
-   //
-   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // customChartIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
-   //
-   // customChartIndicator.Price[] should be used instead of Price[]
-   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
-   //
-   
+
    int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
-   //  
+   //    
      
 //--- check for data
    if(rates_total<InpSignalSMA)
@@ -142,10 +114,10 @@ int OnCalculate(const int rates_total,const int prev_calculated,
       limit=0;
    else limit=_prev_calculated-1;
 //--- calculate MACD
-
    for(int i=limit;i<rates_total && !IsStopped();i++)
    {
       ExtMacdBuffer[i] = ExtFastMaBuffer[i]-ExtSlowMaBuffer[i];
+      /*
       if(ExtMacdBuffer[i] > 0)
       {
          ExtMacdBufferUp[i] = ExtFastMaBuffer[i]-ExtSlowMaBuffer[i];
@@ -156,6 +128,7 @@ int OnCalculate(const int rates_total,const int prev_calculated,
          ExtMacdBufferDn[i] = ExtFastMaBuffer[i]-ExtSlowMaBuffer[i];
          ExtMacdBufferUp[i] = 0;
       }
+      */
    }
 //--- calculate Signal
    SimpleMAOnBuffer(rates_total,_prev_calculated,0,InpSignalSMA,ExtMacdBuffer,ExtSignalBuffer);

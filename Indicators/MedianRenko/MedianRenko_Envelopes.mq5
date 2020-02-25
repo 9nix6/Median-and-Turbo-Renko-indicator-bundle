@@ -27,11 +27,14 @@ input double             InpDeviation=0.1;            // Deviation
 double                   ExtUpBuffer[];
 double                   ExtDownBuffer[];
 double                   ExtMABuffer[];
-//--- MA handle
-int                      ExtMAHandle;
+int                      weightSum;
 
+//--- MA handle
+//int                      ExtMAHandle;
+
+#include <MovingAverages.mqh>
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator customChart;
+MedianRenkoIndicator customChartIndicator;
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -54,9 +57,8 @@ void OnInit()
    PlotIndexSetInteger(0,PLOT_SHIFT,InpMAShift);
    PlotIndexSetInteger(1,PLOT_SHIFT,InpMAShift);
 //---
-//   ExtMAHandle=iMA(NULL,0,InpMAPeriod,0,InpMAMethod,InpAppliedPrice);
-   ExtMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\MedianRenko_MA",InpMAPeriod,0,InpMAMethod,InpAppliedPrice,true);
-//   ExtMAHandle=iCustom(Symbol(),_Period,"MedianRenko\\Indicators\\MedianRenko_MA",InpMAPeriod,0,InpMAMethod,InpAppliedPrice,true);
+   
+   customChartIndicator.SetUseAppliedPriceFlag(InpAppliedPrice);
    
 //--- initialization done
   }
@@ -77,17 +79,14 @@ int OnCalculate(const int rates_total,const int prev_calculated,
 //--- check for bars count
    if(rates_total<InpMAPeriod)
       return(0);
-   int calculated=BarsCalculated(ExtMAHandle);
-   if(calculated<rates_total)
-     {
-      Print("Not all data of ExtMAHandle is calculated (",calculated,"bars ). Error",GetLastError());
-      return(0);
-     }
 //--
-   if(!customChart.OnCalculate(rates_total,prev_calculated,Time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,Time,Close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(Close))
       return(0);
   
-   int _prev_calculated = customChart.GetPrevCalculated();     
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();     
      
 //--- we can copy not all data
    int to_copy;
@@ -99,11 +98,26 @@ int OnCalculate(const int rates_total,const int prev_calculated,
      }
 //---- get ma buffer
    if(IsStopped()) return(0); //Checking for stop flag
-   if(CopyBuffer(ExtMAHandle,0,0,to_copy,ExtMABuffer)<=0)
-     {
-      Print("Getting MA data is failed! Error",GetLastError());
-      return(0);
-     }
+   
+   switch(InpMAMethod)
+   {
+      case MODE_SMA:
+         SimpleMAOnBuffer(rates_total,_prev_calculated,0,InpMAPeriod,customChartIndicator.Price,ExtMABuffer);
+      break;
+      
+      case MODE_EMA:
+         ExponentialMAOnBuffer(rates_total,_prev_calculated,0,InpMAPeriod,customChartIndicator.Price,ExtMABuffer);
+      break;
+      
+      case MODE_SMMA:
+         SmoothedMAOnBuffer(rates_total,_prev_calculated,0,InpMAPeriod,customChartIndicator.Price,ExtMABuffer);
+      break;
+      
+      case MODE_LWMA:
+         LinearWeightedMAOnBuffer(rates_total,_prev_calculated,0,InpMAPeriod,customChartIndicator.Price,ExtMABuffer,weightSum);
+      break;
+   }
+      
 //--- preliminary calculations
    limit=_prev_calculated-1;
    if(limit<InpMAPeriod)

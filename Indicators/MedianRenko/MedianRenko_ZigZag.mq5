@@ -27,7 +27,7 @@ int            level=3;             // recounting depth
 double         deviation;           // deviation in points
 
 #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
-MedianRenkoIndicator medianRenkoIndicator;
+MedianRenkoIndicator customChartIndicator;
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -127,33 +127,36 @@ int OnCalculate(const int rates_total,
    // Process data through MedianRenko indicator
    //
    
-   if(!medianRenkoIndicator.OnCalculate(rates_total,prev_calculated,time))
+   if(!customChartIndicator.OnCalculate(rates_total,prev_calculated,time,close))
+      return(0);
+      
+   if(!customChartIndicator.BufferSynchronizationCheck(close))
       return(0);
    
    //
    // Make the following modifications in the code below:
    //
-   // medianRenkoIndicator.GetPrevCalculated() should be used instead of prev_calculated
+   // customChartIndicator.GetPrevCalculated() should be used instead of prev_calculated
    //
-   // medianRenkoIndicator.Open[] should be used instead of open[]
-   // medianRenkoIndicator.Low[] should be used instead of low[]
-   // medianRenkoIndicator.High[] should be used instead of high[]
-   // medianRenkoIndicator.Close[] should be used instead of close[]
+   // customChartIndicator.Open[] should be used instead of open[]
+   // customChartIndicator.Low[] should be used instead of low[]
+   // customChartIndicator.High[] should be used instead of high[]
+   // customChartIndicator.Close[] should be used instead of close[]
    //
-   // medianRenkoIndicator.IsNewBar (true/false) informs you if a renko brick completed
+   // customChartIndicator.IsNewBar (true/false) informs you if a renko brick completed
    //
-   // medianRenkoIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
-   // (!) medianRenkoIndicator.SetGetTimeFlag() must be called in OnInit() for medianRenkoIndicator.Time[] to be used
+   // customChartIndicator.Time[] shold be used instead of Time[] for checking the renko bar time.
+   // (!) customChartIndicator.SetGetTimeFlag() must be called in OnInit() for customChartIndicator.Time[] to be used
    //
-   // medianRenkoIndicator.Tick_volume[] should be used instead of TickVolume[]
-   // medianRenkoIndicator.Real_volume[] should be used instead of Volume[]
-   // (!) medianRenkoIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
+   // customChartIndicator.Tick_volume[] should be used instead of TickVolume[]
+   // customChartIndicator.Real_volume[] should be used instead of Volume[]
+   // (!) customChartIndicator.SetGetVolumesFlag() must be called in OnInit() for Tick_volume[] & Real_volume[] to be used
    //
-   // medianRenkoIndicator.Price[] should be used instead of Price[]
-   // (!) medianRenkoIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for medianRenkoIndicator.Price[] to be used
+   // customChartIndicator.Price[] should be used instead of Price[]
+   // (!) customChartIndicator.SetUseAppliedPriceFlag(ENUM_APPLIED_PRICE _applied_price) must be called in OnInit() for customChartIndicator.Price[] to be used
    //
    
-   int _prev_calculated = medianRenkoIndicator.GetPrevCalculated();
+   int _prev_calculated = customChartIndicator.GetPrevCalculated();
    
    //
    //
@@ -218,12 +221,12 @@ int OnCalculate(const int rates_total,
 //--- searching High and Low
    for(shift=limit;shift<rates_total && !IsStopped();shift++)
      {
-      val=medianRenkoIndicator.Low[iLowest(medianRenkoIndicator.Low,ExtDepth,shift)];
+      val=customChartIndicator.Low[iLowest(customChartIndicator.Low,ExtDepth,shift)];
       if(val==lastlow) val=0.0;
       else
         {
          lastlow=val;
-         if((medianRenkoIndicator.Low[shift]-val)>deviation) val=0.0;
+         if((customChartIndicator.Low[shift]-val)>deviation) val=0.0;
          else
            {
             for(back=1;back<=ExtBackstep;back++)
@@ -233,14 +236,14 @@ int OnCalculate(const int rates_total,
               }
            }
         }
-      if(medianRenkoIndicator.Low[shift]==val) LowMapBuffer[shift]=val; else LowMapBuffer[shift]=0.0;
+      if(customChartIndicator.Low[shift]==val) LowMapBuffer[shift]=val; else LowMapBuffer[shift]=0.0;
       //--- high
-      val=medianRenkoIndicator.High[iHighest(medianRenkoIndicator.High,ExtDepth,shift)];
+      val=customChartIndicator.High[iHighest(customChartIndicator.High,ExtDepth,shift)];
       if(val==lasthigh) val=0.0;
       else
         {
          lasthigh=val;
-         if((val-medianRenkoIndicator.High[shift])>deviation) val=0.0;
+         if((val-customChartIndicator.High[shift])>deviation) val=0.0;
          else
            {
             for(back=1;back<=ExtBackstep;back++)
@@ -250,7 +253,7 @@ int OnCalculate(const int rates_total,
               }
            }
         }
-      if(medianRenkoIndicator.High[shift]==val) HighMapBuffer[shift]=val; else HighMapBuffer[shift]=0.0;
+      if(customChartIndicator.High[shift]==val) HighMapBuffer[shift]=val; else HighMapBuffer[shift]=0.0;
      }
 
 //--- last preparation
@@ -276,7 +279,7 @@ int OnCalculate(const int rates_total,
               {
                if(HighMapBuffer[shift]!=0)
                  {
-                  lasthigh=medianRenkoIndicator.High[shift];
+                  lasthigh=customChartIndicator.High[shift];
                   lasthighpos=shift;
                   whatlookfor=Sill;
                   ZigzagBuffer[shift]=lasthigh;
@@ -284,7 +287,7 @@ int OnCalculate(const int rates_total,
                  }
                if(LowMapBuffer[shift]!=0)
                  {
-                  lastlow=medianRenkoIndicator.Low[shift];
+                  lastlow=customChartIndicator.Low[shift];
                   lastlowpos=shift;
                   whatlookfor=Pike;
                   ZigzagBuffer[shift]=lastlow;

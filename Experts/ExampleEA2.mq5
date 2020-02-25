@@ -6,7 +6,7 @@
 
 #property copyright "Copyright 2017-2019, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.10"
+#property version   "1.20"
 #property description "Example EA: Trading based on Renko SuperTrend signals." 
 #property description "One trade at a time. Each trade has TP & SL" 
 
@@ -59,7 +59,7 @@ ulong currentTicket;
 //  Example shown in OnInit & OnDeinit functions below:
 //
 
-MedianRenko * medianRenko;
+MedianRenko medianRenko = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
 CMarketOrder * marketOrder;
 
 //+------------------------------------------------------------------+
@@ -67,10 +67,6 @@ CMarketOrder * marketOrder;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true); 
-   if(medianRenko == NULL)
-      return(INIT_FAILED);
-   
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -99,11 +95,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   if(medianRenko != NULL)
-   {
-      medianRenko.Deinit();
-      delete medianRenko;
-   }
+   medianRenko.Deinit();
    
    //
    //  delete MarketOrder class
@@ -147,7 +139,7 @@ void OnTick()
       int startAtBar   = 1;   // get values starting from the last completed bar.
       int numberOfBars = 2;   // gat a total of 3 values (for 3 bars starting from bar 1 (last completed))     
             
-      if(medianRenko.GetSuperTrend(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
+      if(medianRenko.GetChannel(HighArray,MidArray,LowArray,startAtBar,numberOfBars))
       {
          //
          // Read signal bar's time for optional debug log
