@@ -126,8 +126,12 @@ class MedianRenko
 
 MedianRenko::MedianRenko(void)
 {
-#define CONSTRUCTOR1
+   #ifdef IS_DEBUG
+      Print(__FUNCTION__);
+   #endif
+
    medianRenkoSettings = new CRenkoCustomChartSettigns();
+      
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = _Symbol;
    usedByIndicatorOnRenkoChart = false;
@@ -136,7 +140,12 @@ MedianRenko::MedianRenko(void)
 
 MedianRenko::MedianRenko(bool isUsedByIndicatorOnRenkoChart)
 {
+   #ifdef IS_DEBUG
+      Print(__FUNCTION__);
+   #endif
+
    medianRenkoSettings = new CRenkoCustomChartSettigns();
+
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = _Symbol;
    usedByIndicatorOnRenkoChart = isUsedByIndicatorOnRenkoChart;
@@ -145,8 +154,12 @@ MedianRenko::MedianRenko(bool isUsedByIndicatorOnRenkoChart)
 
 MedianRenko::MedianRenko(string symbol)
 {
-#define CONSTRUCTOR2
+   #ifdef IS_DEBUG
+      Print(__FUNCTION__);
+   #endif
+
    medianRenkoSettings = new CRenkoCustomChartSettigns();
+
    medianRenkoHandle = INVALID_HANDLE;
    medianRenkoSymbol = symbol;
    usedByIndicatorOnRenkoChart = false;
@@ -155,8 +168,15 @@ MedianRenko::MedianRenko(string symbol)
 
 MedianRenko::~MedianRenko(void)
 {
+   #ifdef IS_DEBUG
+      Print(__FUNCTION__);
+   #endif
+   
    if(medianRenkoSettings != NULL)
+   {
       delete medianRenkoSettings;
+      medianRenkoSettings = NULL;  
+   }
 }
 
 void MedianRenko::ReleaseHandle()
@@ -164,6 +184,7 @@ void MedianRenko::ReleaseHandle()
    if(medianRenkoHandle != INVALID_HANDLE)
    {
       IndicatorRelease(medianRenkoHandle); 
+      medianRenkoSettings = NULL;
    }
 }
 

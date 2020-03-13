@@ -50,7 +50,7 @@
    #else // user defined settings
    
    
-      input int               barSizeInTicks = 20;               // Renko body size (in ticks)
+      input int               barSizeInTicks = 100;               // Renko body size (in ticks)
       
       input ENUM_CUSTOM_BAR_TYPE    PredefinedSetting=cbtRenko;               // Renko mode preset
       input int                     InpOpen=50;                               // Open offset % (0 to ..)

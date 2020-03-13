@@ -4,11 +4,14 @@
 // https://www.mql5.com/en/users/arturz
 //
 
-#property copyright "Copyright 2017-2019, AZ-iNVEST"
+#property copyright "Copyright 2017-2020, AZ-iNVEST"
 #property link      "http://www.az-invest.eu"
-#property version   "1.20"
+#property version   "1.21"
 #property description "Example EA: Trading based on Renko SuperTrend signals." 
 #property description "One trade at a time. Each trade has TP & SL" 
+#property strict
+
+// #define IS_DEBUG // Uncomment for additional messages in the "Experts" tab
 
 //
 // Helper functions for placing market orders.
@@ -45,7 +48,7 @@ ulong currentTicket;
 // the MedianRenko indicator attached.
 //
 
-#define SHOW_INDICATOR_INPUTS
+//#define SHOW_INDICATOR_INPUTS
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -59,14 +62,17 @@ ulong currentTicket;
 //  Example shown in OnInit & OnDeinit functions below:
 //
 
-MedianRenko medianRenko = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
-CMarketOrder * marketOrder;
+MedianRenko    *medianRenko = NULL;
+CMarketOrder   *marketOrder = NULL;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   if(medianRenko == NULL)
+       medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -86,8 +92,10 @@ int OnInit()
       params.busyTimeout_ms = InpBusyTimeout_ms; 
       params.requoteTimeout_ms = InpRequoteTimeout_ms;         
    }
-   marketOrder = new CMarketOrder(params);
-  
+   
+   if(marketOrder == NULL)
+      marketOrder = new CMarketOrder(params);
+   
    return(INIT_SUCCEEDED);
 }
 //+------------------------------------------------------------------+
@@ -104,7 +112,18 @@ void OnDeinit(const int reason)
    if(marketOrder != NULL)
    {
       delete marketOrder;
+      marketOrder = NULL;
    }
+  
+   // 
+   // delete MedianRenko class
+   //
+   
+   if(medianRenko != NULL)
+   {
+      delete medianRenko;
+      medianRenko = NULL;
+   }   
 }
 
 //
@@ -125,7 +144,10 @@ void OnTick()
    
    if(medianRenko.IsNewBar())
    {
-
+      #ifdef IS_DEBUG
+         Print("New bar");
+      #endif
+      
       //
       // Getting SuperTrend values is done using the
       // GetSuperTrend(double &SuperTrendHighArray[], double &SuperTrendArray[], double &SuperTrendLowArray[], int start, int count) 
@@ -167,24 +189,29 @@ void OnTick()
             {
                if(Signal == POSITION_TYPE_BUY)
                {
-                  Print("BUY signal at "+barTime); // optional debug log
-
+                  #ifdef IS_DEBUG
+                     Print("BUY signal at "+barTime); // optional debug log
+                  #endif
+                  
                   if(marketOrder.Long(_Symbol,InpLotSize,InpSLPoints,InpTPPoints))
+                  {
                      Print("Long position opened.");
+                  }
                }  
                else if(Signal == POSITION_TYPE_SELL)
                {
-                  Print("SELL singal at "+barTime); // optional debug log
-
+                  #ifdef IS_DEBUG
+                     Print("SELL singal at "+barTime); // optional debug log
+                  #endif
+                  
                   if(marketOrder.Short(_Symbol,InpLotSize,InpSLPoints,InpTPPoints))
+                  {
                      Print("Short position opened.");
+                  }
                }
             }
-
-            
          }         
-      } 
-      
+      }       
    } 
 }
 
@@ -200,9 +227,10 @@ bool SuperTrendSignal(double &H[], double &M[], double &L[], ENUM_POSITION_TYPE 
       return false;
    }
 
-   // Uncomment line below for optional debug output:
-   //Print(time+": H[1] = "+DoubleToString(H[1],_Digits)+" L[0] = "+DoubleToString(L[0],_Digits)+" | L[1] = "+DoubleToString(L[1],_Digits)+" H[0] = "+DoubleToString(H[0],_Digits));
-
+   #ifdef IS_DEBUG
+      Print(time+": H[1] = "+DoubleToString(H[1],_Digits)+" L[0] = "+DoubleToString(L[0],_Digits)+" | L[1] = "+DoubleToString(L[1],_Digits)+" H[0] = "+DoubleToString(H[0],_Digits));
+   #endif
+   
    if((H[1] == M[1]) && (L[0] == M[0]))
    {
       //
