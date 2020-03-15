@@ -1,6 +1,6 @@
-#property copyright "Copyright 2017-2019, Artur Zas"
+#property copyright "Copyright 2017-2020, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.10"
+#property version   "1.11"
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
@@ -22,15 +22,15 @@
 
 #ifdef EA_ON_RANGE_BARS
    #include <AZ-INVEST/SDK/RangeBars.mqh>
-   RangeBars customBars = RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   RangeBars *customBars = NULL;
 #endif
 #ifdef EA_ON_RENKO
    #include <AZ-INVEST/SDK/MedianRenko.mqh>
-   MedianRenko customBars = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   MedianRenko *customBars = NULL;
 #endif
 #ifdef EA_ON_XTICK_CHART
    #include <AZ-INVEST/SDK/TickChart.mqh>
-   TickChart customBars = TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   TickChart *customBars = NULL;
 #endif
 
 #include <AZ-INVEST/SDK/TimeControl.mqh>
@@ -65,8 +65,8 @@ int numberOfBars = 3;
 
 // EA variables
 
-CMarketOrder *marketOrder;
-CTimeControl timeControl;
+CMarketOrder   *marketOrder = NULL;
+CTimeControl   *timeControl = NULL;
 
 ulong currentTicket;
 ENUM_POSITION_TYPE currentPositionType;
@@ -91,6 +91,19 @@ ENUM_POSITION_TYPE validation;
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   if(customBars == NULL)
+   {
+      #ifdef EA_ON_RANGE_BARS
+         customBars = new RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif
+      #ifdef EA_ON_RENKO
+         customBars = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif
+      #ifdef EA_ON_XTICK_CHART   
+         customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif   
+   }
+   
    customBars.Init();
    if(customBars.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -111,6 +124,11 @@ int OnInit()
    
    marketOrder = new CMarketOrder(params);
    
+   if(timeControl == NULL)
+   {
+      timeControl = new CTimeControl();
+   }
+   
    timeControl.SetValidTraingHours(Start,End);
    
    return(INIT_SUCCEEDED);
@@ -121,9 +139,30 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    customBars.Deinit();
+
+   //  delete TimeControl class
+   
+   if(timeControl != NULL)
+   {
+      delete timeControl;
+      timeControl = NULL;
+   }
       
+   //  delete MarketOrder class
+   
    if(marketOrder != NULL)
+   {
       delete marketOrder;
+      marketOrder = NULL;
+   }
+  
+   // delete MedianRenko class
+   
+   if(customBars != NULL)
+   {
+      delete customBars;
+      customBars = NULL;
+   }   
       
    Comment("");
 }
@@ -132,7 +171,7 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   if(marketOrder == NULL)
+   if(marketOrder == NULL || customBars == NULL || timeControl == NULL)
       return;
       
    if(customBars.IsNewBar())

@@ -22,15 +22,15 @@
 
 #ifdef EA_ON_RANGE_BARS
    #include <AZ-INVEST/SDK/RangeBars.mqh>
-   RangeBars customBars = RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   RangeBars *customBars = NULL;
 #endif
 #ifdef EA_ON_RENKO
    #include <AZ-INVEST/SDK/MedianRenko.mqh>
-   MedianRenko customBars = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   MedianRenko *customBars = NULL;
 #endif
 #ifdef EA_ON_XTICK_CHART
    #include <AZ-INVEST/SDK/TickChart.mqh>
-   TickChart customBars = TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   TickChart *customBars = NULL;
 #endif
 
 #include <AZ-INVEST/SDK/TimeControl.mqh>
@@ -64,7 +64,7 @@ int numberOfBars = 4;
 // EA variables
 
 CMarketOrder *marketOrder;
-CTimeControl timeControl;
+CTimeControl *timeControl;
 
 ulong currentTicket;
 ENUM_POSITION_TYPE currentPositionType;
@@ -89,6 +89,19 @@ ENUM_POSITION_TYPE validation;
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   if(customBars == NULL)
+   {
+      #ifdef EA_ON_RANGE_BARS
+         customBars = new RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif
+      #ifdef EA_ON_RENKO
+         customBars = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif
+      #ifdef EA_ON_XTICK_CHART   
+         customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif   
+   }
+
    customBars.Init();
    
    signal = POSITION_TYPE_NONE;
@@ -107,6 +120,11 @@ int OnInit()
    
    marketOrder = new CMarketOrder(params);
    
+   if(timeControl == NULL)
+   {
+      timeControl = new CTimeControl();
+   }
+   
    timeControl.SetValidTraingHours(Start,End);
    
    return(INIT_SUCCEEDED);
@@ -117,9 +135,30 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    customBars.Deinit();
+
+   //  delete TimeControl class
+   
+   if(timeControl != NULL)
+   {
+      delete timeControl;
+      timeControl = NULL;
+   }
       
+   //  delete MarketOrder class
+   
    if(marketOrder != NULL)
+   {
       delete marketOrder;
+      marketOrder = NULL;
+   }
+  
+   // delete MedianRenko class
+   
+   if(customBars != NULL)
+   {
+      delete customBars;
+      customBars = NULL;
+   }   
       
    Comment("");
 }

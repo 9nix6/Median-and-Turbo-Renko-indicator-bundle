@@ -1,12 +1,12 @@
 //
-// Copyright 2017-2019, Artur Zas
+// Copyright 2017-2020, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
 
-#property copyright "Copyright 2017-2019, Artur Zas"
+#property copyright "Copyright 2017-2020, Artur Zas"
 #property link      "https://www.mql5.com/en/users/arturz"
-#property version   "3.00"
+#property version   "3.01"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 
 //
@@ -31,13 +31,16 @@
 //  Example shown in OnInit & OnDeinit functions below:
 //
 
-MedianRenko medianRenko = MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+MedianRenko    *medianRenko = NULL;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   if(medianRenko == NULL)
+       medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)
       return(INIT_FAILED);
@@ -54,6 +57,16 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    medianRenko.Deinit();
+
+   // 
+   // delete MedianRenko class
+   //
+   
+   if(medianRenko != NULL)
+   {
+      delete medianRenko;
+      medianRenko = NULL;
+   }   
    
    //
    //  your custom code goes here...
