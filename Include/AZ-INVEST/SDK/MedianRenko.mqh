@@ -2,7 +2,7 @@
 #property link      "http://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
-   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay300" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay301" 
 #else
    #ifdef P_RENKO_BR
       #ifdef P_RENKO_BR_PRO
@@ -254,7 +254,7 @@ int MedianRenko::Init()
       
 #ifdef P_RENKO_BR
    #ifdef P_RENKO_BR_PRO
-   medianRenkoHandle = iCustom(this.medianRenkoSymbol,_Period,RENKO_INDICATOR_NAME, 
+   medianRenkoHandle = iCustom(this.medianRenkoSymbol, _Period, RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
                                        //s.retracementFactor,
                                        //s.symetricalReversals,
@@ -354,11 +354,9 @@ int MedianRenko::Init()
                                        ShiftObj,
                                        UsedInEA);                                       
    #endif
-#else   
+#else // Main block
    medianRenkoHandle = iCustom(this.medianRenkoSymbol, _Period, RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
-                                       //s.retracementFactor,
-                                       //s.symetricalReversals,
                                        s.predefinedSettings,
                                        s.pOpen,
                                        s.pReversalShadow,
@@ -371,6 +369,7 @@ int MedianRenko::Init()
                                        s.applyOffsetToFirstBar,
                                        s.offsetValue,
                                        s.showNumberOfDays, s.resetOpenOnNewTradingDay,
+                                       "",
                                        showPivots,
                                        pivotPointCalculationType,
                                        RColor,
