@@ -30,3 +30,8 @@ This short video will walk you through the installation process:
 The robust Renko indicator for MT5 can be downloaded from: https://www.mql5.com/en/market/product/16347
 
 A version for MT4 is available from: https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4
+
+## Disclaimer:
+
+All of the EAs and indicators presented in this repository are solely for educational and informational purposes and should not be regarded as advice or an invitation to trade. 
+Application of the techniques, ideas, and suggestions presented in the videos and files of this repository is done at the user’s sole discretion and risk. 
