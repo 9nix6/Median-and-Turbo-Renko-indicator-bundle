@@ -1,22 +1,25 @@
 #property copyright "Copyright 2017-2020, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.11"
+#property version   "1.12"
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
-// ----------------------------------------------------
+// -----------------------------------------------------------------
 //
 
 //#define EA_ON_RANGE_BARS   // Use EA on RangeBar chart 
-#define EA_ON_RENKO        // Use EA on Renko charts
 //#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
+#define EA_ON_RENKO        // Use EA on Renko charts
+
+// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
+// ----------------------------------------------------------------------------------
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 //
 // Uncomment the directive below and recompile for use in a backtest only
 // ----------------------------------------------------------------------
 //
-
-#define SHOW_INDICATOR_INPUTS
+//#define SHOW_INDICATOR_INPUTS
 
 // Include all needed files
 
@@ -39,8 +42,8 @@
 // EA input parameters
 
 input double   Lots = 0.1;                         // Traded lots
-input uint     StopLoss = 100;                     // Stop Loss
-input uint     TakeProfit = 250;                   // Take profit
+input uint     StopLoss = 100;                     // Stop Loss (in points)
+input uint     TakeProfit = 250;                   // Take profit (in points)
 input bool     ForceSR = false;                    // Force Stop & Reverse
 input bool     ReverseOnMACrossInsideGap = true;   // Reverse trade if MA cross inside a gap
 input bool     CloseTradeAfterTradingHours = true; // Close trade after trading hours

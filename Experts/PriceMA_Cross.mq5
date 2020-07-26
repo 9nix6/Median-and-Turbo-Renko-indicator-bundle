@@ -18,6 +18,10 @@
 
 #define SHOW_INDICATOR_INPUTS
 
+// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
+// ----------------------------------------------------------------------------------
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+
 // Include all needed files
 
 #ifdef EA_ON_RANGE_BARS

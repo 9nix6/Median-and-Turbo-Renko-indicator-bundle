@@ -10,7 +10,8 @@ double NormalizeLots(string symbol, double InputLots)
 {
    double lotsMin    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MIN);
    double lotsMax    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MAX);
-   int lotsDigits  = (int) - MathLog10(SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP));
+//   int lotsDigits  = (int) - MathLog10(SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP));
+   int lotsDigits  =  (int)MathAbs(MathLog10(SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP)));
 
    if(InputLots < lotsMin)
       InputLots = lotsMin;

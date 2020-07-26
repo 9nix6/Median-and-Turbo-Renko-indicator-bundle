@@ -567,8 +567,6 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
          ArrayCopy(realVolume,temp,(count-_count),0);      
       }
       
-#ifdef P_RENKO_BR
-   #ifdef P_RENKO_BR_PRO
       if(getVolumeBreakdown)
       {      
          if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,_count,temp) == -1)
@@ -583,25 +581,6 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
             return -1;
          ArrayCopy(buySellVolume,temp,(count-_count),0);
       }
-   #else
-   #endif
-#else      
-      if(getVolumeBreakdown)
-      {      
-         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,_count,temp) == -1)
-            return -1;
-         ArrayCopy(buyVolume,temp,(count-_count),0);
-
-         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,_count,temp) == -1)
-            return -1;
-         ArrayCopy(sellVolume,temp,(count-_count),0);
-
-         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,_count,temp) == -1)
-            return -1;
-         ArrayCopy(buySellVolume,temp,(count-_count),0);
-      }
-#endif
-
    }
    else
    {
@@ -631,8 +610,6 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
          ArrayCopy(realVolume,temp);
       }
       
-#ifdef P_RENKO_BR
-   #ifdef P_RENKO_BR_PRO
       if(getVolumeBreakdown)
       {      
          if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,count,temp) == -1)
@@ -647,24 +624,6 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
             return -1;
          ArrayCopy(buySellVolume,temp);
       }
-   #else
-   #endif
-#else
-      if(getVolumeBreakdown)
-      {      
-         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,count,temp) == -1)
-            return -1;
-         ArrayCopy(buyVolume,temp);
-
-         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,count,temp) == -1)
-            return -1;
-         ArrayCopy(sellVolume,temp);
-
-         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,count,temp) == -1)
-            return -1;
-         ArrayCopy(buySellVolume,temp);
-      }
-#endif      
    }
      
    return count;

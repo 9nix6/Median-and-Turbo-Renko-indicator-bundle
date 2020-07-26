@@ -19,6 +19,10 @@
 
 #define SHOW_INDICATOR_INPUTS
 
+// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
+// ----------------------------------------------------------------------------------
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+
 //
 // You need to include the MedianRenko.mqh header file
 //
