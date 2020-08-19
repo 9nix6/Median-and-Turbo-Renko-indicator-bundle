@@ -15,6 +15,8 @@ The created EA will automatically acquire the settings used on the Renko chart i
 
 **ExampleEA3.mq5** - An example showing the use of additional indicators (included in the Indicators/MedianRenko folder) in your EA. MedianRenko_RSI indicator is used in the example (RSI values are outputted to log).
 
+**2MA_Cross.mq5** - A fully functioning EA that places trades based on a 2 MA cross signal. fixed stop loss and take profit levels can be set as well as valid trading hours.
+
 ## Installation
 
 All folders with header files & EA should be placed in the **MQL5** sub-folder of your Metatrader's Data Folder.
