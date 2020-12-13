@@ -1,6 +1,6 @@
 # MedianRenko.mqh
-MQL5 header file for 'Median and Turbo Renko indicator bundle' available for MT5 via MQL5 Market. The class library file simplifies the use of the MT5 MedianRenko indicator when creating a Renko EA for MT5.
-The created EA will automatically acquire the settings used on the Renko chart it is applied to, so it is no longer required to clone the indicator's settings used on the chart to the Renko settings that should be used in the EA.
+MQL5 header file for the "Median and Turbo Renko indicator bundle" which is available for MT5 via MQL5 Market. The class library file simplifies the use of the MT5 MedianRenko indicator when creating a Renko EA for MT5.
+The created EA will automatically acquire the settings used on the Renko chart, so it is no longer required to clone the indicator's settings that are used on the chart to the Renko settings that should be used in the EA.
 
 ## The files
 **MedianRenko.mqh** - The header file for including in the EA code. It contains the definition and implementation of the MedianRenko class
@@ -15,7 +15,11 @@ The created EA will automatically acquire the settings used on the Renko chart i
 
 **ExampleEA3.mq5** - An example showing the use of additional indicators (included in the Indicators/MedianRenko folder) in your EA. MedianRenko_RSI indicator is used in the example (RSI values are outputted to log).
 
-**2MA_Cross.mq5** - A fully functioning EA that places trades based on a 2 MA cross signal. fixed stop loss and take profit levels can be set as well as valid trading hours.
+**2MA_Cross.mq5** - A fully functioning EA that places trades based on a 2 MA cross signal. Fixed stop loss and take profit levels can be set as well as valid trading hours.
+
+**PriceMA_Cross.mq5** - A fully functional EA that places trades on price & MA cross signals. Both a fixed stop loss and take profit levels can be set as well as valid trading hours.
+
+**Renko_EA** - Robust EA for automated trading on renko charts. The EA uses the most commonly used renko trading signals. The settings enable very flexible entry & exit signals as well as an optional trailing stop.
 
 ## Installation
 
@@ -29,9 +33,9 @@ This short video will walk you through the installation process:
 [![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/00jelr1y200)
 
 ## Resources
-The robust Renko indicator for MT5 can be downloaded from: https://www.mql5.com/en/market/product/16347
+The robust Renko indicator for MT5 can be downloaded from https://www.mql5.com/en/market/product/16347
 
-A version for MT4 is available from: https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4
+A version for MT4 is available from https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4
 
 ## Disclaimer:
 
