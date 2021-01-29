@@ -29,6 +29,8 @@ struct CEaLogicPartameters
    int                     SLPoints;
    int                     TPPoints;
    int                     BEPoints;
+   bool                    StopAndReverse;
+   bool                    CloseOnRevesal;
    int                     TrailStartPoints;
    int                     TrailByPoints;
    
@@ -116,22 +118,7 @@ CEaLogic::~CEaLogic(void)
 
 bool CEaLogic::Initialize(CEaLogicPartameters &inputParams, MedianRenko *_medianRenko)
 {
-   this.inputs.TradingMode       = inputParams.TradingMode;
-   this.inputs.OpenXSignal       = inputParams.OpenXSignal;
-   this.inputs.CloseXSignal      = inputParams.CloseXSignal;
-   this.inputs.LotSize           = inputParams.LotSize;
-   this.inputs.SLPoints          = inputParams.SLPoints;
-   this.inputs.TPPoints          = inputParams.TPPoints;
-   this.inputs.BEPoints          = inputParams.BEPoints;
-   this.inputs.TrailByPoints     = inputParams.TrailByPoints;
-   this.inputs.TrailStartPoints  = inputParams.TrailStartPoints;
-   this.inputs.StartTrading      = inputParams.StartTrading;
-   this.inputs.EndTrading        = inputParams.EndTrading;
-   this.inputs.CloseEOD          = inputParams.CloseEOD;
-   this.inputs.MA1Filter         = inputParams.MA1Filter;
-   this.inputs.MA2Filter         = inputParams.MA2Filter;
-   this.inputs.MA3Filter         = inputParams.MA3Filter;
-   this.inputs.SuperTrendFilter  = inputParams.SuperTrendFilter;
+   this.inputs = inputParams;
    
    this.medianRenko = _medianRenko;
    if(this.medianRenko == NULL)
@@ -177,7 +164,8 @@ bool CEaLogic::Initialize(CEaLogicPartameters &inputParams, MedianRenko *_median
    }
         
    if(tradeManager != NULL)
-      delete tradeManager;            
+      delete tradeManager;     
+             
    tradeManager = new CTradeManager(params2, orderHandler);
    if(tradeManager == NULL)
    {
@@ -333,13 +321,10 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
 
 bool CEaLogic::TryReverseTrade(ulong _ticket)
 {
-   /* Always in stop & reverse mode
-   if((this.inputs.SLPoints > 0) || (this.inputs.TPPoints > 0))
-   {
-      // EA not in Stop&Revese mode
-      return false;  
-   }
-   */
+   // only stop&reverse if option enabled in EA inputs
+   if(this.inputs.StopAndReverse == false)
+      return false;
+      
    if(this.inputs.TradingMode != TRADING_MODE_ALL)
    {
       // EA not in Trading mode for buys & sells
@@ -425,6 +410,10 @@ bool CEaLogic::OkToCloseByFilter(ulong _ticket, bool _invertCondition, bool &_va
 
 bool CEaLogic::TryCloseTradeOnReversal(ulong _ticket)
 {
+   // only close on reversals if option enabled in EA inputs
+   if(this.inputs.CloseOnRevesal == false)
+      return false;
+   
    if(!timeControl.IsTradingTimeValid())
    {
       Print(__FUNCTION__," Not closing trade "+(string)_ticket+" outside of trading hours.");

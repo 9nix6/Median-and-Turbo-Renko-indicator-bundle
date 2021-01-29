@@ -1,12 +1,14 @@
-#property copyright "Copyright 2017-2019, Artur Zas"
+#property copyright "Copyright 2017-2021, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.04"
+#property version   "1.05"
+//#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
+//#define TICKCHART_LICENSE // uncomment when used on a Tick chart
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
-// ----------------------------------------------------
+// -----------------------------------------------------------------
 //
-
+//
 //#define EA_ON_RANGE_BARS   // Use EA on RangeBar chart 
 #define EA_ON_RENKO        // Use EA on Renko charts
 //#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
@@ -15,12 +17,12 @@
 // Uncomment the directive below and recompile for use in a backtest only
 // ----------------------------------------------------------------------
 //
-
-#define SHOW_INDICATOR_INPUTS
+// #define SHOW_INDICATOR_INPUTS
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
-//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//
+// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 // Include all needed files
 
@@ -40,20 +42,32 @@
 #include <AZ-INVEST/SDK/TimeControl.mqh>
 #include <AZ-INVEST/SDK/TradeFunctions.mqh>
 
+enum ENUM_TRADE_DIRECTION 
+{
+   TRADE_DIRECTION_BUY = POSITION_TYPE_BUY,    // Buy
+   TRADE_DIRECTION_SELL = POSITION_TYPE_SELL,  // Sell
+   TRADE_DIRECTION_ALL = 1000,                 // Buy & Sell
+};
+
 // EA input parameters
 
-input double   Lots = 0.1;                         // Traded lots
-input uint     StopLoss = 0;                       // Stop Loss
-input uint     TakeProfit = 0;                     // Take profit
-input bool     CloseTradeAfterTradingHours = true; // Close trade after trading hours
-input ulong    DeviationPoints = 0;                // Maximum defiation (in points)
-input double   ManualTickSize = 0.000;             // Tick Size (0 = auto detect) 
-input string   Start="9:00";                       // Start trading at 
-input string   End="17:55";                        // End trading at
-input ulong    MagicNumber=8888;                   // Assign trade ID 
-input int      NumberOfRetries = 50;               // Maximum number of retries
-input int      BusyTimeout_ms = 1000;              // Wait [ms] before retry on bussy errors
-input int      RequoteTimeout_ms = 250;            // Wait [ms] before retry on requotes
+input double               Lots = 0.1;                                  // Traded lots
+input uint                 StopLoss = 0;                                // Stop Loss
+input uint                 TakeProfit = 0;                              // Take profit
+input int                  ConfirmationBars = 1;                        // Signal confirmation bars
+input int                  PrevSignalBars = 1;                          // Prev signal confirmation bars
+input ENUM_TRADE_DIRECTION ValidTradeDirection = TRADE_DIRECTION_ALL;   // Valid trading type
+input bool                 CloseTradeOnSignalChange = true;             // Close trade on signal change
+input bool                 ForceSR = false;                             // Force Stop & Reverse
+input bool                 CloseTradeAfterTradingHours = true;          // Close trade after trading hours
+input ulong                DeviationPoints = 0;                         // Maximum defiation (in points)
+input double               ManualTickSize = 0.000;                      // Tick Size (0 = auto detect) 
+input string               Start="9:00";                                // Start trading at 
+input string               End="17:55";                                 // End trading at
+input ulong                MagicNumber=8888;                            // Assign trade ID 
+input int                  NumberOfRetries = 50;                        // Maximum number of retries
+input int                  BusyTimeout_ms = 1000;                       // Wait [ms] before retry on bussy errors
+input int                  RequoteTimeout_ms = 250;                     // Wait [ms] before retry on requotes
 
 // Global data buffers 
 
@@ -63,7 +77,9 @@ double MA1[];         // Buffer for moving average 1
 // Read 4 rates MA1 values starting from current (uncompleted) bar
 
 int startAtBar   = 0;   
-int numberOfBars = 4;   
+int numberOfBars;   
+int _confirmationBars;
+int _prevSignalBars;
 
 // EA variables
 
@@ -109,6 +125,9 @@ int OnInit()
    customBars.Init();
    
    signal = POSITION_TYPE_NONE;
+   _confirmationBars = (ConfirmationBars < 1) ? 1 : ConfirmationBars;
+   _prevSignalBars = (PrevSignalBars < 1) ? 1 : PrevSignalBars;
+   numberOfBars = _confirmationBars + _prevSignalBars + 1; 
    
    CMarketOrderParameters params;
    {
@@ -178,11 +197,11 @@ void OnTick()
    {
       if(timeControl.IsScheduleEnabled())
       {
-         Comment("\n\nEA trading schedule ON ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid());
+         Comment("EA trading schedule ON ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid());
       }
       else
       {
-         Comment("\n\nEA trading schedule OFF");
+         Comment("EA trading schedule OFF");
       }
              
       if(!timeControl.IsTradingTimeValid())
@@ -209,26 +228,26 @@ void OnTick()
       }
       else if(!customBars.GetMA(_MA1, MA1, startAtBar, numberOfBars))
       {
-         Print("Error getting values from MA1");      
+         Print("Error getting values from MA1 - please enable MA1 on chart");
       }
       else
       {
         
-         signal = PriceAndMovingAverageCross();
+         signal = PriceAndMovingAverageCross(_confirmationBars, _prevSignalBars);
   
          if(timeControl.IsScheduleEnabled())
          {
-            Comment("\n\nEA trading schedule ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid()+
-            "\n MA_1 [2]: "+(string)NormalizeDouble(MA1[2],_Digits)+" [1]: "+(string)NormalizeDouble(MA1[1],_Digits)+
-            "\n Close[2]: "+(string)NormalizeDouble(RateInfo[2].close,_Digits)+" [1]: "+(string)NormalizeDouble(RateInfo[1].close,_Digits)+
+            Comment("EA trading schedule ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid()+
+            "\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
+            "\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
             "\n Price & MA cross signal = "+marketOrder.PositionTypeToString(signal)+
             "\n");
          }
          else
          {
-            Comment("\n\nEA trading schedule not used. Trading is enabled."+
-            "\n MA_1 [2]: "+(string)NormalizeDouble(MA1[2],_Digits)+" [1]: "+(string)NormalizeDouble(MA1[1],_Digits)+
-            "\n Close[2]: "+(string)NormalizeDouble(RateInfo[2].close,_Digits)+" [1]: "+(string)NormalizeDouble(RateInfo[1].close,_Digits)+
+            Comment("EA trading schedule not used. Trading is enabled."+
+            "\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
+            "\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
             "\n Price & MA cross signal = "+marketOrder.PositionTypeToString(signal)+
             "\n");
          }
@@ -237,16 +256,31 @@ void OnTick()
          {
             if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_SELL,MagicNumber))
             {
-               if(currentTicket > 0)
+               if(currentTicket > 0 && ForceSR)
                {
-                  marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                  if(IsTradeDirectionValid(POSITION_TYPE_SELL))
+                  {
+                     PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
+                     marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                  }
                }  
+               else if(currentTicket > 0)
+               {
+                  // close trade on signal change
+                  if(CloseTradeOnSignalChange)
+                  {
+                     PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
+                     marketOrder.Close(currentTicket);                  
+                  }
+               }
                return;
             }
             
             if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_BUY,MagicNumber))
             {
-               marketOrder.Long(_Symbol,Lots,StopLoss,TakeProfit);
+               if(IsTradeDirectionValid(POSITION_TYPE_BUY))
+                  marketOrder.Long(_Symbol,Lots,StopLoss,TakeProfit);
+                  
                return;
             }
          }
@@ -254,16 +288,31 @@ void OnTick()
          {
             if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_BUY,MagicNumber))
             {
-               if(currentTicket > 0 )
+               if(currentTicket > 0 && ForceSR)
                {
-                  marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                  if(IsTradeDirectionValid(POSITION_TYPE_BUY))
+                  {
+                     PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
+                     marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                  }
                }   
+               else if(currentTicket > 0)
+               {
+                  // close trade on signal change
+                  if(CloseTradeOnSignalChange)
+                  {
+                     PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
+                     marketOrder.Close(currentTicket);                                    
+                  }
+               }
                return;
             }
 
             if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_SELL,MagicNumber))
             {
-               marketOrder.Short(_Symbol,Lots,StopLoss,TakeProfit);
+               if(IsTradeDirectionValid(POSITION_TYPE_SELL))
+                  marketOrder.Short(_Symbol,Lots,StopLoss,TakeProfit);
+                  
                return;
             }
          }         
@@ -272,21 +321,74 @@ void OnTick()
 }
 
 //
+// Trade direction validation (Is it OK to trade in the given direction?)
+//
+
+bool IsTradeDirectionValid(ENUM_POSITION_TYPE signalDirection)
+{
+   if(ValidTradeDirection == TRADE_DIRECTION_ALL)
+      return true;
+      
+   if(signalDirection == POSITION_TYPE_BUY && ValidTradeDirection == TRADE_DIRECTION_BUY)
+      return true;
+   else if(signalDirection == POSITION_TYPE_SELL && ValidTradeDirection == TRADE_DIRECTION_SELL)
+      return true;
+   else      
+      return false;
+}
+
+//
 // Price & MA cross logic
 //
 
-ENUM_POSITION_TYPE PriceAndMovingAverageCross()
+ENUM_POSITION_TYPE PriceAndMovingAverageCross(int confirmationBars, int prevSignalBars)
 {
-   if(numberOfBars < 4)
+   if(numberOfBars < confirmationBars+1)
    {
       Alert("Invalid number of MqlRates and MA readings defined! Crossover cannot be determined.");
       return POSITION_TYPE_NONE;
    }
    
-   if((RateInfo[1].close < MA1[1]) && (RateInfo[2].close < MA1[2]) && (RateInfo[3].close >= MA1[3]))
+   bool confirmedSell = true;
+   bool confirmedBuy  = true;
+
+   // check trailing bar for confirmation of previous signal   
+   for(int i=(confirmationBars+1); i<=(confirmationBars+prevSignalBars); i++)
+   {
+      if(RateInfo[i].close > MA1[i])
+      {
+        confirmedBuy = false;
+      }
+      else if(RateInfo[i].close < MA1[i])
+      {
+         confirmedSell = false;
+      }
+   }
+      
+   // check confirmation bars for current signal
+   for(int i=1; i<=confirmationBars; i++)
+   {
+      if(RateInfo[i].close == MA1[i])
+      {
+         confirmedSell = false;
+         confirmedBuy  = false;
+      }
+      else if(RateInfo[i].close < MA1[i])
+      {
+         confirmedBuy  = false;
+      }
+      else if(RateInfo[i].close > MA1[i])
+      {
+         confirmedSell = false;
+      }
+   }
+   
+   // signal aggregate
+   if(confirmedSell)
       return POSITION_TYPE_SELL;
-   else if((RateInfo[1].close > MA1[1]) && (RateInfo[2].close > MA1[2]) && (RateInfo[3].close <= MA1[3]))
+   else if(confirmedBuy)
       return POSITION_TYPE_BUY;
    else
       return POSITION_TYPE_NONE;
 }
+

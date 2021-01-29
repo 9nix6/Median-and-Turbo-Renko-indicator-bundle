@@ -6,7 +6,10 @@
 // Renko_EA uses "Median and Turbo renko indicator bundle" for the renko chart.
 // You can get this indicator from MQL5 market: 
 // https://www.mql5.com/en/market/product/16347
+// or
+// https://www.az-invest.eu
 // 
+//#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
 //
 // SHOW_INDICATOR_INPUTS *NEEDS* to be defined, if the EA needs to be *tested in MT5's backtester*
@@ -15,12 +18,12 @@
 // NOT using the '#define SHOW_INDICATOR_INPUTS' statement will read the settigns a chart with 
 // the MedianRenko indicator attached.
 //
-
 // #define SHOW_INDICATOR_INPUTS
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
-//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//
+// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 #define SHOW_DEBUG
 #ifdef _DEBUG
@@ -37,12 +40,13 @@
 
 input string            InpComment0          = "==============";  // EA settings
 input ENUM_TRADING_MODE InpMode              = TRADING_MODE_ALL;  // Trading mode
+input bool              InpStopAndReverse    = false;             // Enable Stop & Reverse
+input bool              InpCloseOnRevesal    = true;              // Close on reversal signal
 input int               InpOpenXSignal       = 1;                 // Open signal confirmation bars
 input int               InpCloseXSignal      = 1;                 // Close signal confirmation bars
 input double            InpLotSize           = 0.1;               // Lot size
 input int               InpSLPoints          = 200;               // StopLoss (Points) [ 0 = OFF ]
 input int               InpTPPoints          = 400;               // TakeProfit (Points) [ 0 = OFF ]
-input string            InpComment1          = "Stop & Reverse";  // *** If StopLoss & TakeProfit = 0
 input int               InpBEPoints          = 0;                 // BreakEven (Points) [ 0 = OFF ]
 input int               InpTrailByPoints     = 100;               // Trail by (Points) [ 0 = OFF ]
 input int               InpTrailStartPoints  = 150;               // Start trailing after (Points)
@@ -90,6 +94,8 @@ int OnInit()
       params.BEPoints            = InpBEPoints;
       params.TrailByPoints       = InpTrailByPoints;
       params.TrailStartPoints    = InpTrailStartPoints;
+      params.StopAndReverse      = InpStopAndReverse;
+      params.CloseOnRevesal      = InpCloseOnRevesal;
       params.StartTrading        = InpStart;
       params.EndTrading          = InpEnd;
       params.CloseEOD            = InpCloseTradesEOD;
@@ -118,6 +124,7 @@ void OnDeinit(const int reason)
    {
       medianRenko.Deinit();
       delete medianRenko;
+      medianRenko = NULL;
    }
 }
 
