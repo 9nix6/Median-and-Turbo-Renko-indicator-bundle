@@ -2,7 +2,7 @@
 #property link      "https://www.az-invest.eu"
 #property version   "1.05"
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
-//#define TICKCHART_LICENSE // uncomment when used on a Tick chart
+//#define TICKCHART_LICENSE // uncomment when used on a Tick chart from https://www.az-invest.eu/Tick-chart-and-volume-chart-for-mt5
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
@@ -13,16 +13,16 @@
 #define EA_ON_RENKO        // Use EA on Renko charts
 //#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
 
+// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
+// ----------------------------------------------------------------------------------
+//
+// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+
 //
 // Uncomment the directive below and recompile for use in a backtest only
 // ----------------------------------------------------------------------
 //
 // #define SHOW_INDICATOR_INPUTS
-
-// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
-// ----------------------------------------------------------------------------------
-//
-// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 // Include all needed files
 

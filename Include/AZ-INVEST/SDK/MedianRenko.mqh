@@ -1,11 +1,14 @@
-#property copyright "Copyright 2018-2020, Level Up Software"
+#property copyright "Copyright 2018-2021, Level Up Software"
 #property link      "http://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
-   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay308" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay311" 
 #else
    #ifdef P_RENKO_BR_PRO
       #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
+   #endif      
+   #ifdef ULTIMATE_RENKO_LICENSE
+      #define RENKO_INDICATOR_NAME "UltimateRenko"
    #else
       #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
    #endif
@@ -213,8 +216,6 @@ int MedianRenko::Init()
    RENKO_SETTINGS s = medianRenkoSettings.GetCustomChartSettings(); 
    CHART_INDICATOR_SETTINGS cis = medianRenkoSettings.GetChartIndicatorSettings(); 
    
-  // this.Debug(s, cis);
-      
    medianRenkoHandle = iCustom(this.medianRenkoSymbol, _Period, RENKO_INDICATOR_NAME, 
                                        s.barSizeInTicks,
                                        s.predefinedSettings,
@@ -277,12 +278,13 @@ int MedianRenko::Init()
                                        cis.ChannelPriceLabel,
                                        cis.ChannelMidPriceLabel,
                                        true); // used in EA
+// --- all remaining settings are left at defaults since they have no impact on the EA ---
 // TopBottomPaddingPercentage,
 // showCurrentBarOpenTime,
 // SoundFileBull,
 // SoundFileBear,
 // DisplayAsBarChart
-// ShiftObj; all letft at defaults
+// ShiftObj
       
     if(medianRenkoHandle == INVALID_HANDLE)
     {

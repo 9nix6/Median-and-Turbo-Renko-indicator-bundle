@@ -11,6 +11,11 @@
 // 
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
+// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
+// ----------------------------------------------------------------------------------
+//
+// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+
 //
 // SHOW_INDICATOR_INPUTS *NEEDS* to be defined, if the EA needs to be *tested in MT5's backtester*
 // -------------------------------------------------------------------------------------------------
@@ -19,11 +24,6 @@
 // the MedianRenko indicator attached.
 //
 // #define SHOW_INDICATOR_INPUTS
-
-// Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
-// ----------------------------------------------------------------------------------
-//
-// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 #define SHOW_DEBUG
 #ifdef _DEBUG
