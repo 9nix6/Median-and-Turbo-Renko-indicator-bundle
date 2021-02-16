@@ -25,7 +25,7 @@ CRenkoPatterns::~CRenkoPatterns(void)
 {
 }
 
-bool CRenkoPatterns::IsBearReversal(MqlRates &renkos[],int confirmationBars)
+bool CRenkoPatterns::IsBearReversal(MqlRates &renkos[], int confirmationBars)
 {
    if(ArraySize(renkos) < (confirmationBars+2))
       return false; // not enough data
@@ -48,7 +48,7 @@ bool CRenkoPatterns::IsBearReversal(MqlRates &renkos[],int confirmationBars)
    return true; // pattern detexted
 }
 
-bool CRenkoPatterns::IsBullReversal(MqlRates &renkos[],int confirmationBars)
+bool CRenkoPatterns::IsBullReversal(MqlRates &renkos[], int confirmationBars)
 {
    if(ArraySize(renkos) < (confirmationBars+2))
       return false; // not enough data

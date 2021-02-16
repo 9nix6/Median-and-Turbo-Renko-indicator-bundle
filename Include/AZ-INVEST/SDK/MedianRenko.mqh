@@ -6,15 +6,16 @@
 #else
    #ifdef P_RENKO_BR_PRO
       #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
-   #endif      
-   #ifdef ULTIMATE_RENKO_LICENSE
-      #ifdef MQL5_MARKET_VERSION
-         #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
-      #else 
-         #define RENKO_INDICATOR_NAME "UltimateRenko"
-      #endif   
    #else
-      #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+      #ifdef ULTIMATE_RENKO_LICENSE
+         #ifdef MQL5_MARKET_VERSION
+            #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+         #else 
+            #define RENKO_INDICATOR_NAME "UltimateRenko"
+         #endif   
+      #else
+         #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
+      #endif
    #endif
 #endif
 

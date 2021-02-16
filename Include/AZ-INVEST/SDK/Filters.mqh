@@ -12,19 +12,33 @@ enum ENUM_FILTER_MODE
    FILTER_MODE_ENTRY_EXIT, // ON for entry & exit
 };
 
+enum ENUM_FITER_CONDITION
+{
+   FILTER_CONDITION_OPEN,           // Open
+   FILTER_CONDITION_CLOSE,          // Close
+   FILTER_CONDITION_OPEN_OR_CLOSE,  // Open or Close
+   FILTER_CONDITION_OPEN_AND_CLOSE, // Open and Close
+};
+
 class CFilters
 {
    public:
        CFilters();
        ~CFilters();
        
-   virtual bool OpenOrCloseAboveValue(MqlRates &lastCompletedBar, double compareToValue);
-   virtual bool OpenOrCloseBelowValue(MqlRates &lastCompletedBar, double compareToValue);
-   virtual bool CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compareToValue);
-   virtual bool CloseAtOrBelowValue(MqlRates &currentUncompletedBar, double compareToValue);
+   virtual bool AboveValue(ENUM_FITER_CONDITION condition, MqlRates &lastCompletedBars[], double &compareToValues[], string desc);
+   virtual bool BelowValue(ENUM_FITER_CONDITION condition, MqlRates &lastCompletedBars[], double &compareToValues[], string desc);
+   
+   virtual bool CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compareToValue, string desc);
+   virtual bool CloseAtOrBelowValue(MqlRates &currentUncompletedBar, double compareToValue, string desc);
    
    virtual bool MaCrossUp(double &valuesFast[], double &valuesSlow[]);
    virtual bool MaCrossDown(double &valuesFast[], double &valuesSlow[]);
+   
+   private:
+   
+   bool MqlRatesArrayIsValid(MqlRates &arr[]);
+   bool DoubleArrayIsValid(double &arr[]);
 };
 
 CFilters::CFilters(void)
@@ -36,52 +50,164 @@ CFilters::~CFilters(void)
 }
 
 //
-// Last completed bar's open OR close values are above VALUE
+// Last completed bars' open AND/OR close values are above VALUE
 //
 
-bool CFilters::OpenOrCloseAboveValue(MqlRates &lastCompletedBar, double compareToValue)
+bool CFilters::AboveValue(ENUM_FITER_CONDITION condition, MqlRates &lastCompletedBars[], double &compareToValues[], string desc)
 {
-   if((compareToValue == 0) || (lastCompletedBar.open == 0) || (lastCompletedBar.close == 0))
+   if(DoubleArrayIsValid(compareToValues) == false || MqlRatesArrayIsValid(lastCompletedBars) == false)
       return false;      
       
-   if((lastCompletedBar.open > compareToValue) ||
-      (lastCompletedBar.close > compareToValue))
+   for(int i = 0; i<ArraySize(lastCompletedBars); i++)
+   {  
+      switch(condition)
       {
-         #ifdef SHOW_DEBUG 
-            Print("DEBUG: ",__FUNCTION__," => compareToValue:",compareToValue," lastCompletedBar.open:",lastCompletedBar.open," lastCompletedBar.close:",lastCompletedBar.close);
-         #endif
-      
-         return true;
-      }         
-   return false;
+         case FILTER_CONDITION_OPEN:
+            if(lastCompletedBars[i].open <= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+            
+               return false;
+            }
+         break;
+
+         case FILTER_CONDITION_CLOSE:
+            if(lastCompletedBars[i].close <= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+
+         case FILTER_CONDITION_OPEN_OR_CLOSE:
+            if(lastCompletedBars[i].open <= compareToValues[i] && lastCompletedBars[i].close <= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+
+         case FILTER_CONDITION_OPEN_AND_CLOSE:
+            if(lastCompletedBars[i].open <= compareToValues[i] || lastCompletedBars[i].close <= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+         
+         default:
+            #ifdef SHOW_DEBUG 
+               Print("DEBUG: ",__FUNCTION__," => Failed check on undef. filter condition");
+            #endif            
+            return false;
+      }
+   }
+   
+   return true;
 }
 
 //
 // Last completed bar's open OR close values are below VALUE
 //
 
-bool CFilters::OpenOrCloseBelowValue(MqlRates &lastCompletedBar, double compareToValue)
+bool CFilters::BelowValue(ENUM_FITER_CONDITION condition, MqlRates &lastCompletedBars[], double &compareToValues[], string desc)
 {
-   if((compareToValue == 0) || (lastCompletedBar.open == 0) || (lastCompletedBar.close == 0))
-      return false;
+   if(DoubleArrayIsValid(compareToValues) == false || MqlRatesArrayIsValid(lastCompletedBars) == false)
+      return false;      
       
-   if((lastCompletedBar.open < compareToValue) ||
-      (lastCompletedBar.close < compareToValue))
+   for(int i = 0; i<ArraySize(lastCompletedBars); i++)
+   {  
+      switch(condition)
       {
-         #ifdef SHOW_DEBUG 
-            Print("DEBUG: ",__FUNCTION__," => compareToValue:",compareToValue," lastCompletedBar.open:",lastCompletedBar.open," lastCompletedBar.close:",lastCompletedBar.close);
-         #endif
+         case FILTER_CONDITION_OPEN:
+            if(lastCompletedBars[i].open >= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+            
+               return false;
+            }
+         break;
 
-         return true;
-      }         
-   return false;
+         case FILTER_CONDITION_CLOSE:
+            if(lastCompletedBars[i].close >= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+
+         case FILTER_CONDITION_OPEN_OR_CLOSE:
+            if(lastCompletedBars[i].open >= compareToValues[i] && lastCompletedBars[i].close >= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+
+         case FILTER_CONDITION_OPEN_AND_CLOSE:
+            if(lastCompletedBars[i].open >= compareToValues[i] || lastCompletedBars[i].close >= compareToValues[i])         
+            {
+               #ifdef SHOW_DEBUG 
+                  Print("DEBUG: ",__FUNCTION__,"(",EnumToString(condition),") invalidated => ",desc,":",DoubleToString(compareToValues[i],_Digits),
+                     " | lastCompletedBars[",i,"].open:",DoubleToString(lastCompletedBars[i].open,_Digits),
+                     " | lastCompletedBars[",i,"].close:",DoubleToString(lastCompletedBars[i].close,_Digits));
+               #endif
+
+               return false;
+            }
+         break;
+         
+         default:
+            #ifdef SHOW_DEBUG 
+               Print("DEBUG: ",__FUNCTION__," => Failed check on undef. filter condition");
+            #endif            
+            return false;
+      }
+   }
+   
+   return true;
 }
+
+
 
 //
 // Current bar's close is at or above VALUE
 //
 
-bool CFilters::CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compareToValue)
+bool CFilters::CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compareToValue, string desc)
 {
    if((compareToValue == 0) || (currentUncompletedBar.close == 0))
       return false;
@@ -89,7 +215,7 @@ bool CFilters::CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compa
    if(currentUncompletedBar.close >= compareToValue)
    {
       #ifdef SHOW_DEBUG 
-         Print("DEBUG: ",__FUNCTION__," => compareToValue:",compareToValue," lastCompletedBar.close:",currentUncompletedBar.close);
+         Print("DEBUG: ",__FUNCTION__," => compareToValue(",desc,"):",DoubleToString(compareToValue, _Digits)," lastCompletedBar.close:",DoubleToString(currentUncompletedBar.close, _Digits));
       #endif
       return true; 
    }   
@@ -100,7 +226,7 @@ bool CFilters::CloseAtOrAboveValue(MqlRates &currentUncompletedBar, double compa
 // Current bar's close is at or below VALUE
 //
 
-bool CFilters::CloseAtOrBelowValue(MqlRates &currentUncompletedBar, double compareToValue)
+bool CFilters::CloseAtOrBelowValue(MqlRates &currentUncompletedBar, double compareToValue, string desc)
 {
    if((compareToValue == 0) || (currentUncompletedBar.close == 0))
       return false;
@@ -108,7 +234,7 @@ bool CFilters::CloseAtOrBelowValue(MqlRates &currentUncompletedBar, double compa
    if(currentUncompletedBar.close <= compareToValue)
    {
       #ifdef SHOW_DEBUG 
-         Print("DEBUG: ",__FUNCTION__," => compareToValue:",compareToValue," lastCompletedBar.close:",currentUncompletedBar.close);
+         Print("DEBUG: ",__FUNCTION__," => compareToValue(",desc,"):",DoubleToString(compareToValue, _Digits)," lastCompletedBar.close:",DoubleToString(currentUncompletedBar.close, _Digits));
       #endif
       return true; 
    }   
@@ -153,3 +279,35 @@ bool CFilters::MaCrossDown(double &valueFast[], double &valueSlow[])
    
    return false;
 }
+
+//
+// Validate MqlRates array
+//
+
+bool CFilters::MqlRatesArrayIsValid(MqlRates &arr[])
+{
+   for(int i = 0; i<ArraySize(arr); i++)
+   {
+      if(arr[i].open == 0 || arr[i].close == 0 || arr[i].high == 0 || arr[i].low == 0)
+         return false;
+   }
+   
+   return true;
+}
+
+//
+// Validate double values array
+//
+
+bool CFilters::DoubleArrayIsValid(double &arr[])
+{
+   for(int i = 0; i<ArraySize(arr); i++)
+   {
+      if(arr[i] == 0)
+         return false;
+   }
+   
+   return true;
+}
+
+

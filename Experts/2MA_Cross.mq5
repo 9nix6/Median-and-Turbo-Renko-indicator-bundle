@@ -1,8 +1,10 @@
 #property copyright "Copyright 2017-2021, Artur Zas"
+// GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 #property link      "https://www.az-invest.eu"
-#property version   "1.13"
+#property version   "1.14"
+
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
-//#define TICKCHART_LICENSE // uncomment when used on a Tick chart from https://www.az-invest.eu/Tick-chart-and-volume-chart-for-mt5
+//#define VOLUMECHART_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/Tick-chart-and-volume-chart-for-mt5
 
 //
 // Uncomment only ONE of the 3 directives listed below and recompile
@@ -12,6 +14,7 @@
 //#define EA_ON_RANGE_BARS   // Use EA on RangeBar chart 
 #define EA_ON_RENKO        // Use EA on Renko charts
 //#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
+//#define EA_ON_TICK_VOLUME_CHART  // Use EA on Tick & Volume Bar Chart
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
@@ -36,6 +39,10 @@
 #endif
 #ifdef EA_ON_XTICK_CHART
    #include <AZ-INVEST/SDK/TickChart.mqh>
+   TickChart *customBars = NULL;
+#endif
+#ifdef EA_ON_TICK_VOLUME_CHART
+   #include <AZ-INVEST/SDK/VolumeBarChart.mqh>
    TickChart *customBars = NULL;
 #endif
 
@@ -99,6 +106,10 @@ ENUM_POSITION_TYPE validation;
    static int _MA1 = TICKCHART_MA1;
    static int _MA2 = TICKCHART_MA2;
 #endif
+#ifdef EA_ON_TICK_VOLUME_CHART
+   static int _MA1 = VOLUMECHART_MA1;
+   static int _MA2 = VOLUMECHART_MA2;
+#endif
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -114,6 +125,9 @@ int OnInit()
          customBars = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
       #endif
       #ifdef EA_ON_XTICK_CHART   
+         customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif   
+      #ifdef EA_ON_TICK_VOLUME_CHART
          customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
       #endif   
    }

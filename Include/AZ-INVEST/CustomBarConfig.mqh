@@ -1,10 +1,18 @@
+//#define DEVELOPER_VERSION
+//#define DISPLAY_DEBUG_MSG
 #define MQL5_MARKET_VERSION
 
+//#define P_RENKO_BR_PRO
 #define ULTIMATE_RENKO_LICENSE
 //#define RANGEBARS_LICENSE
 //#define SECONDSCHART_LICENSE
 //#define TICKCHART_LICENSE
 //#define VOLUMECHART_LICENSE
+
+#ifdef P_RENKO_BR_PRO
+   #include <AZ-INVEST/SDK/MedianRenkoIndicator.mqh>
+   #define AZINVEST_CCI MedianRenkoIndicator
+#endif
 
 #ifdef TICKCHART_LICENSE
    #include <AZ-INVEST/SDK/TickChartIndicator.mqh>

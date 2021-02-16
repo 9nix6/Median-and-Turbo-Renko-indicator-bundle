@@ -39,9 +39,17 @@ struct CEaLogicPartameters
    bool                    CloseEOD;
    
    ENUM_FILTER_MODE        MA1Filter;
+   ENUM_FITER_CONDITION    MA1FilterCond;
+   int                     MA1FilterCheckBars;
    ENUM_FILTER_MODE        MA2Filter;
+   ENUM_FITER_CONDITION    MA2FilterCond;
+   int                     MA2FilterCheckBars;
    ENUM_FILTER_MODE        MA3Filter;
+   ENUM_FITER_CONDITION    MA3FilterCond;
+   int                     MA3FilterCheckBars;
    ENUM_FILTER_MODE        SuperTrendFilter;
+   ENUM_FITER_CONDITION    SuperTrendFilterCond;
+   int                     SuperTrendFilterCheckBars;
 
    ulong                   MagicNumber;
    ulong                   DeviationPoints;
@@ -199,45 +207,64 @@ bool CEaLogic::IsNewBar(void)
    return this.medianRenko.IsNewBar();
 }
 
+//
+// Main EA logic
+//
+
 void CEaLogic::Run(void)
 {
-   bool  _inTrade;
    ulong _ticket;
-   int   _iterations;
-   
-   if(_inTrade = orderHandler.IsOpen(_ticket, _Symbol,this.inputs.MagicNumber))
-   {
-      // checks done on every tick
+   bool  _inTrade = orderHandler.IsOpen(_ticket, _Symbol, this.inputs.MagicNumber);
+   int   _iterations = 0;
 
+   //
+   // checks done on every tick
+   //
+   
+   if(_inTrade)
+   {
+      
+      // close trade at the end of the day?
+      
       if(TryCloseTradeOnEOD(_ticket)) // filtering not applied
          return;
      
+      // close trade on SuperTrend exit filter signal?
+      
       if((this.inputs.SuperTrendFilter == FILTER_MODE_ENTRY_EXIT) || (this.inputs.SuperTrendFilter == FILTER_MODE_EXIT))
       {
          // only check on each tick if SuperTrend filter applied to exit
          
-         _iterations = 0;
-         GetRenkoInfo(CURRENT_UNCOMPLETED_BAR,_iterations);
+         GetRenkoInfo(CURRENT_UNCOMPLETED_BAR, _iterations);
+         
          if(TryCloseTradeOnFilterCondition(_ticket))
             return;
       }
 
+      // trade management
+      
       tradeManager.Manage(_ticket, tradeManagerState);               
    }
+
+   //
+   // checks done on new bar only
+   //
    
    if(IsNewBar())   
    {
-      // checks done on new bar only
-
+      
       _iterations = 0;
-      GetRenkoInfo(CURRENT_UNCOMPLETED_BAR,_iterations);
+      GetRenkoInfo(CURRENT_UNCOMPLETED_BAR, _iterations);
       
       if(_inTrade)
       {
          if(IsReversalCondition(this.RenkoRatesInfoArray, _ticket))
          {
+            // trade reversal signal detected
+            
             if(TryReverseTrade(_ticket))
                return;
+               
             if(TryCloseTradeOnReversal(_ticket))
                return;
          }
@@ -246,7 +273,11 @@ void CEaLogic::Run(void)
             return;
       }
       else
+      {
+         // enter the trade
+         
          TryOpenTrade(this.RenkoRatesInfoArray);
+      }
    }   
 }
 
@@ -262,7 +293,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    }
    
    //
-   // filter out filler bars 
+   // filter out phantom bars (price jumps and gaps)
    //
    
    _iteration++;
@@ -276,15 +307,15 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(_fillerCount > 0)
    {
-      GetRenkoInfo((offset + _fillerCount),_iteration);
-      return;
+      GetRenkoInfo((offset + _fillerCount), _iteration);
+      return; 
    }
    
-   //
+   // get values for filters
    
    if(this.inputs.MA1Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA(RENKO_MA1,MA1,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA1, MA1, _startAtBar, _numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA1");
          return;
@@ -293,7 +324,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
 
    if(this.inputs.MA2Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA(RENKO_MA2,MA2,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA2, MA2, _startAtBar, _numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA2");
          return;
@@ -302,7 +333,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(this.inputs.MA3Filter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetMA(RENKO_MA3,MA3,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetMA(RENKO_MA3, MA3, _startAtBar, _numberOfBars))
       {
          Print(__FUNCTION__," failed on GetMA3");
          return;
@@ -311,7 +342,7 @@ void CEaLogic::GetRenkoInfo(int offset, int &_iteration)
    
    if(this.inputs.SuperTrendFilter != FILTER_MODE_OFF)
    {
-      if(!medianRenko.GetChannel(HighArray,SuperTrend,LowArray,_startAtBar,_numberOfBars))
+      if(!medianRenko.GetChannel(HighArray, SuperTrend, LowArray, _startAtBar, _numberOfBars))
       {
          Print(__FUNCTION__," failed on GetSuprTrend");
          return;
@@ -362,8 +393,7 @@ bool CEaLogic::TryReverseTrade(ulong _ticket)
 
 bool CEaLogic::OkToCloseByFilter(ulong _ticket, bool _invertCondition, bool &_validated)
 {
-   //if((this.inputs.MA1Filter == FILTER_MODE_ENTRY_EXIT) || (this.inputs.MA1Filter == FILTER_MODE_EXIT))
-   bool _filterValidated, _filterResult;
+   bool _filterResult;
    
    ENUM_POSITION_TYPE _pType;
    if(!orderHandler.GetPositionType(_ticket,_pType))
@@ -376,31 +406,35 @@ bool CEaLogic::OkToCloseByFilter(ulong _ticket, bool _invertCondition, bool &_va
         
    if(_type == ORDER_TYPE_BUY)
    {
+      // current trade is LONG
+      
       if(_invertCondition)
       {
-         _filterResult = FilterShortOK(FILTER_MODE_EXIT, _filterValidated);
-         if(_filterValidated)
+         _filterResult = FilterShortOK(FILTER_MODE_EXIT, _validated);
+         if(_validated)
             return _filterResult;
       }
       else
       {
-         _filterResult = FilterLongOK(FILTER_MODE_EXIT, _filterValidated);
-         if(_filterValidated)
+         _filterResult = FilterLongOK(FILTER_MODE_EXIT, _validated);
+         if(_validated)
             return _filterResult;
       }  
    }   
    else if(_type == ORDER_TYPE_SELL)
    {
+      // current trade is SHORT
+      
       if(_invertCondition)
       {
-         _filterResult = FilterLongOK(FILTER_MODE_EXIT, _filterValidated);
-         if(_filterValidated)
+         _filterResult = FilterLongOK(FILTER_MODE_EXIT, _validated);
+         if(_validated)
             return _filterResult;
       }
       else
       {
-         _filterResult = FilterShortOK(FILTER_MODE_EXIT, _filterValidated);
-         if(_filterValidated)
+         _filterResult = FilterShortOK(FILTER_MODE_EXIT, _validated);
+         if(_validated)
             return _filterResult;
       }  
    } 
@@ -553,19 +587,11 @@ bool CEaLogic::TryCloseTradeOnFilterCondition(ulong _ticket)
    bool _filterValidated, _filterResult;
    
    _filterResult = OkToCloseByFilter(_ticket, true, _filterValidated);
-   if(!_filterValidated)
-   {
-      return false;
-   }
-   else
-   {
-      //#ifdef SHOW_DEBUG 
-      //   Print("DEBUG: ",__FUNCTION__," => Not closing trade "+(string)_ticket+" due to filter condition.");
-      //#endif
-
-      if(!_filterResult)
-         return false;
-   }      
+   
+   if(!_filterValidated) 
+      return false; // not all filters vaidated
+   if(!_filterResult) 
+      return false; // filter condition not met   
 
    #ifdef SHOW_DEBUG 
       Print("DEBUG: ",__FUNCTION__," => ","closing trade on filter condition");
@@ -584,40 +610,52 @@ bool CEaLogic::FilterLongOK(ENUM_FILTER_MODE onAction, bool & _validated)
 
    _validated = false;
    bool _filterValidLong  = true;
-  
+   MqlRates ratesArr[];
+   double doubleArr[];
+     
    if((this.inputs.MA1Filter == onAction) || (this.inputs.MA1Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidLong &= filters.OpenOrCloseAboveValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA1[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA1FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA1, 0, 1, this.inputs.MA1FilterCheckBars);
+      _filterValidLong &= filters.AboveValue(this.inputs.MA1FilterCond, ratesArr, doubleArr, "MA1");
       _validated = true;
    }  
 
    if((this.inputs.MA2Filter == onAction) || (this.inputs.MA2Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidLong &= filters.OpenOrCloseAboveValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA2[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA2FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA2, 0, 1, this.inputs.MA2FilterCheckBars);
+      _filterValidLong &= filters.AboveValue(this.inputs.MA2FilterCond, ratesArr, doubleArr, "MA2");
       _validated = true;
    }  
    
    if((this.inputs.MA3Filter == onAction) || (this.inputs.MA3Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidLong &= filters.OpenOrCloseAboveValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA3[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA3FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA3, 0, 1, this.inputs.MA3FilterCheckBars);
+      _filterValidLong &= filters.AboveValue(this.inputs.MA3FilterCond, ratesArr, doubleArr, "MA3");
       _validated = true;
    }
       
    if((this.inputs.SuperTrendFilter == onAction) || (this.inputs.SuperTrendFilter == FILTER_MODE_ENTRY_EXIT))
    {
+/* TODO - revist previous logic and verify the need for differnt logic on exits and entries
       if(onAction == FILTER_MODE_ENTRY)
-         _filterValidLong &= filters.OpenOrCloseAboveValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR]);
+         _filterValidLong &= filters.OpenOrCloseAboveValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR], "SuperTrend");
       else if(onAction == FILTER_MODE_EXIT)
-         _filterValidLong &= filters.CloseAtOrAboveValue(this.RenkoRatesInfoArray[CURRENT_UNCOMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR]); 
+         _filterValidLong &= filters.CloseAtOrAboveValue(this.RenkoRatesInfoArray[CURRENT_UNCOMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR], "SuperTrend"); 
+*/
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.SuperTrendFilterCheckBars);
+      ArrayCopy(doubleArr, this.SuperTrend, 0, 1, this.inputs.SuperTrendFilterCheckBars);
+      _filterValidLong &= filters.AboveValue(this.inputs.SuperTrendFilterCond, ratesArr, doubleArr, "SuperTrend"); 
       _validated = true;
    }
    
    #ifdef SHOW_DEBUG 
       if(_validated)
-         Print("DEBUG: ",__FUNCTION__," => "," filter condition = "+(string)_filterValidLong+" validation(",(string)_validated,")");
+         Print("DEBUG: ",__FUNCTION__," => "," filter condition = "+(string)_filterValidLong+" | validation = ",(string)_validated);
    #endif
    
-//   return _validated ? _filterValidLong : ((onAction == FILTER_MODE_EXIT) ? true : false);
    return _filterValidLong;
 }
 
@@ -631,39 +669,53 @@ bool CEaLogic::FilterShortOK(ENUM_FILTER_MODE onAction, bool & _validated)
       
    _validated = false;
    bool _filterValidShort = true;
+   MqlRates ratesArr[];
+   double doubleArr[];
 
    if((this.inputs.MA1Filter == onAction) || (this.inputs.MA1Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidShort &= filters.OpenOrCloseBelowValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA1[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA1FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA1, 0, 1, this.inputs.MA1FilterCheckBars);
+      _filterValidShort &= filters.BelowValue(this.inputs.MA1FilterCond, ratesArr, doubleArr, "MA1");
       _validated = true;
    }  
 
    if((this.inputs.MA2Filter == onAction) || (this.inputs.MA2Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidShort &= filters.OpenOrCloseBelowValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA2[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA2FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA2, 0, 1, this.inputs.MA2FilterCheckBars);
+      _filterValidShort &= filters.BelowValue(this.inputs.MA2FilterCond, ratesArr, doubleArr, "MA2");
       _validated = true;
    }  
    
    if((this.inputs.MA3Filter == onAction) || (this.inputs.MA3Filter == FILTER_MODE_ENTRY_EXIT))
    {
-      _filterValidShort &= filters.OpenOrCloseBelowValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.MA3[LAST_COMPLETED_BAR]);
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.MA3FilterCheckBars);
+      ArrayCopy(doubleArr, this.MA3, 0, 1, this.inputs.MA3FilterCheckBars);
+      _filterValidShort &= filters.BelowValue(this.inputs.MA3FilterCond, ratesArr, doubleArr, "MA3");
       _validated = true;
    }
       
    if((this.inputs.SuperTrendFilter == onAction) || (this.inputs.SuperTrendFilter == FILTER_MODE_ENTRY_EXIT))
    {
+/* TODO - revist previous logic and verify the need for differnt logic on exits and entries
       if(onAction == FILTER_MODE_ENTRY)
-         _filterValidShort &= filters.OpenOrCloseBelowValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR]);
+         _filterValidShort &= filters.OpenOrCloseBelowValue(this.RenkoRatesInfoArray[LAST_COMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR], "SuperTrend");
       else if(onAction == FILTER_MODE_EXIT)
       {
-         _filterValidShort &= filters.CloseAtOrBelowValue(this.RenkoRatesInfoArray[CURRENT_UNCOMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR]); 
+         _filterValidShort &= filters.CloseAtOrBelowValue(this.RenkoRatesInfoArray[CURRENT_UNCOMPLETED_BAR],this.SuperTrend[LAST_COMPLETED_BAR], "SuperTrend"); 
       }
+*/
+
+      ArrayCopy(ratesArr, this.RenkoRatesInfoArray, 0, 1, this.inputs.SuperTrendFilterCheckBars);
+      ArrayCopy(doubleArr, this.SuperTrend, 0, 1, this.inputs.SuperTrendFilterCheckBars);
+      _filterValidShort &= filters.BelowValue(this.inputs.SuperTrendFilterCond, ratesArr, doubleArr, "SuperTrend"); 
       _validated = true;
    }
          
    #ifdef SHOW_DEBUG 
       if(_validated)
-         Print("DEBUG: ",__FUNCTION__," => "," filter condition = "+(string)_filterValidShort+" validation(",(string)_validated,")");
+         Print("DEBUG: ",__FUNCTION__," => "," filter condition = "+(string)_filterValidShort+" | validation = ",(string)_validated);
    #endif
    
    return _filterValidShort;
@@ -683,7 +735,7 @@ bool CEaLogic::OkToStartBacktest(void)
          if(MA3on && (this.inputs.MA3Filter != FILTER_MODE_OFF))
             _count = MathMax(_count,MA3period);
          if((ShowChannel == _SuperTrend) && (this.inputs.SuperTrendFilter != FILTER_MODE_OFF))
-            _count = MathMax(_count,SuperTrendPeriod);
+            _count = MathMax(_count, ChannelPeriod); //  SuperTrendPeriod
       
          static bool _infoShown = false;
          if(!_infoShown)

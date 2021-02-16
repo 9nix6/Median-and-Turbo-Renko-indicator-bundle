@@ -1,5 +1,6 @@
 //
-// Copyright 2018-2020, Artur Zas
+// Copyright 2018-2021, Artur Zas
+// GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -7,8 +8,12 @@
 // You can get this indicator from MQL5 market: 
 // https://www.mql5.com/en/market/product/16347
 // or
-// https://www.az-invest.eu
+// https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 // 
+#define VERSION "2.01"
+#property version VERSION
+//#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
+
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
@@ -56,10 +61,18 @@ input string            InpEnd               = "16:00";           // End trading
 input string            InpComment2          = "Always trade";    // *** If Start = "0" & End = "0" =>
 input bool              InpCloseTradesEOD    = false;             // Close trades at "End trading" time
 
-input ENUM_FILTER_MODE  InpMA1Filter         = FILTER_MODE_OFF;   // Use MA1 filter
-input ENUM_FILTER_MODE  InpMA2Filter         = FILTER_MODE_OFF;   // Use MA2 filter
-input ENUM_FILTER_MODE  InpMA3Filter         = FILTER_MODE_OFF;   // Use MA3 filter
-input ENUM_FILTER_MODE  InpSuperTrendFilter  = FILTER_MODE_OFF;   // Use SuprTrend filter
+input ENUM_FILTER_MODE     InpMA1Filter                  = FILTER_MODE_OFF;                  // Use MA1 filter
+input ENUM_FITER_CONDITION InpMA1FilterCond              = FILTER_CONDITION_OPEN_OR_CLOSE;   // MA1 filter condition
+input int                  InpMA1FilterCheckBars         = 1;                                // MA1 filter on last completed bars
+input ENUM_FILTER_MODE     InpMA2Filter                  = FILTER_MODE_OFF;                  // Use MA2 filter
+input ENUM_FITER_CONDITION InpMA2FilterCond              = FILTER_CONDITION_OPEN_OR_CLOSE;   // MA2 filter condition
+input int                  InpMA2FilterCheckBars         = 1;                                // MA2 filter on last completed bars
+input ENUM_FILTER_MODE     InpMA3Filter                  = FILTER_MODE_OFF;                  // Use MA3 filter
+input ENUM_FITER_CONDITION InpMA3FilterCond              = FILTER_CONDITION_OPEN_OR_CLOSE;   // MA3 filter condition
+input int                  InpMA3FilterCheckBars         = 1;                                // MA3 filter on last completed bars
+input ENUM_FILTER_MODE     InpSuperTrendFilter           = FILTER_MODE_OFF;                  // Use SuprTrend filter
+input ENUM_FITER_CONDITION InpSuperTrendFilterCond       = 1;                                // SuprTrend filter on last completed bars
+input int                  InpSuperTrendFilterCheckBars  = FILTER_CONDITION_OPEN_OR_CLOSE;   // SuprTrend filter condition
 
 input ulong             InpMagicNumber       = 82;                // EA magic number (Trade ID)
 input ulong             InpDeviationPoints   = 0;                 // Maximum deviation points
@@ -75,7 +88,11 @@ CEaLogic eaLogic;
 //+------------------------------------------------------------------+
 int OnInit()
 {
+#ifdef DEVELOPER_VERSION
+   medianRenko = new MedianRenko();
+#else 
    medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+#endif
    if(medianRenko == NULL)
       return(INIT_FAILED);
       
@@ -85,29 +102,37 @@ int OnInit()
   
    CEaLogicPartameters params;
    {
-      params.TradingMode         = InpMode;
-      params.OpenXSignal         = InpOpenXSignal;
-      params.CloseXSignal        = InpCloseXSignal;
-      params.LotSize             = InpLotSize;
-      params.SLPoints            = InpSLPoints;
-      params.TPPoints            = InpTPPoints;
-      params.BEPoints            = InpBEPoints;
-      params.TrailByPoints       = InpTrailByPoints;
-      params.TrailStartPoints    = InpTrailStartPoints;
-      params.StopAndReverse      = InpStopAndReverse;
-      params.CloseOnRevesal      = InpCloseOnRevesal;
-      params.StartTrading        = InpStart;
-      params.EndTrading          = InpEnd;
-      params.CloseEOD            = InpCloseTradesEOD;
-      params.MA1Filter           = InpMA1Filter;
-      params.MA2Filter           = InpMA2Filter;
-      params.MA3Filter           = InpMA3Filter;
-      params.SuperTrendFilter    = InpSuperTrendFilter;
-      params.MagicNumber         = InpMagicNumber;
-      params.DeviationPoints     = InpDeviationPoints;
-      params.NumberOfRetries     = InpNumberOfRetries;
-      params.BusyTimeout_ms      = InpBusyTimeout_ms;
-      params.RequoteTimeout_ms   = InpRequoteTimeout_ms;
+      params.TradingMode               = InpMode;
+      params.OpenXSignal               = InpOpenXSignal;
+      params.CloseXSignal              = InpCloseXSignal;
+      params.LotSize                   = InpLotSize;
+      params.SLPoints                  = InpSLPoints;
+      params.TPPoints                  = InpTPPoints;
+      params.BEPoints                  = InpBEPoints;
+      params.TrailByPoints             = InpTrailByPoints;
+      params.TrailStartPoints          = InpTrailStartPoints;
+      params.StopAndReverse            = InpStopAndReverse;
+      params.CloseOnRevesal            = InpCloseOnRevesal;
+      params.StartTrading              = InpStart;
+      params.EndTrading                = InpEnd;
+      params.CloseEOD                  = InpCloseTradesEOD;
+      params.MA1Filter                 = InpMA1Filter;
+      params.MA1FilterCond             = InpMA1FilterCond;
+      params.MA1FilterCheckBars        = InpMA1FilterCheckBars;
+      params.MA2Filter                 = InpMA2Filter;
+      params.MA2FilterCond             = InpMA2FilterCond;
+      params.MA2FilterCheckBars        = InpMA2FilterCheckBars;
+      params.MA3Filter                 = InpMA3Filter;
+      params.MA3FilterCond             = InpMA3FilterCond;
+      params.MA3FilterCheckBars        = InpMA3FilterCheckBars;
+      params.SuperTrendFilter          = InpSuperTrendFilter;
+      params.SuperTrendFilterCond      = InpMA3FilterCond;
+      params.SuperTrendFilterCheckBars = InpMA3FilterCheckBars;
+      params.MagicNumber               = InpMagicNumber;
+      params.DeviationPoints           = InpDeviationPoints;
+      params.NumberOfRetries           = InpNumberOfRetries;
+      params.BusyTimeout_ms            = InpBusyTimeout_ms;
+      params.RequoteTimeout_ms         = InpRequoteTimeout_ms;
    }
    
    if(!eaLogic.Initialize(params, medianRenko))
