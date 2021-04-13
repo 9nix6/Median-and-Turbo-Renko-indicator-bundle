@@ -4,7 +4,7 @@
 
 //#define P_RENKO_BR_PRO
 #define ULTIMATE_RENKO_LICENSE
-//#define RANGEBARS_LICENSE
+//#define RANGEBAR_LICENSE
 //#define SECONDSCHART_LICENSE
 //#define TICKCHART_LICENSE
 //#define VOLUMECHART_LICENSE
@@ -19,7 +19,7 @@
    #define AZINVEST_CCI TickChartIndicator
 #endif 
 
-#ifdef RANGEBARS_LICENSE
+#ifdef RANGEBAR_LICENSE
    #include <AZ-INVEST/SDK/RangeBarIndicator.mqh>
    #define AZINVEST_CCI RangeBarIndicator
 #endif 

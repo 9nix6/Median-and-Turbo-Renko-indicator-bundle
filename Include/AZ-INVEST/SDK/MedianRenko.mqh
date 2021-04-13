@@ -1,8 +1,8 @@
 #property copyright "Copyright 2018-2021, Level Up Software"
-#property link      "http://www.az-invest.eu"
+#property link      "https://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
-   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay311" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay314" 
 #else
    #ifdef P_RENKO_BR_PRO
       #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
@@ -228,52 +228,52 @@ int MedianRenko::Init()
                                        s.pReversalShadow,
                                        s.pReversal,
                                        s.showWicks,
+                                       s.showNumberOfDays,
+                                       "=",
                                        s.atrEnabled,
-                                       //s.atrTimeFrame,
+                                       s.atrTimeFrame,
                                        s.atrPeriod,
                                        s.atrPercentage,
+                                       "=",
                                        s.applyOffsetToFirstBar,
                                        s.offsetValue,
-                                       s.showNumberOfDays, s.resetOpenOnNewTradingDay,
-                                       "",
+                                       s.resetOpenOnNewTradingDay,
+                                       "=",
                                        showPivots,
                                        pivotPointCalculationType,
-                                       RColor,
-                                       PColor,
-                                       SColor,
-                                       PDHColor,
-                                       PDLColor,
-                                       PDCColor,   
+                                       "=",
                                        AlertMeWhen,
                                        AlertNotificationType,
-                                       cis.MA1on, 
+                                       "=",
+                                       //cis.MA1on, 
                                        cis.MA1lineType,
                                        cis.MA1period,
                                        cis.MA1method,
                                        cis.MA1applyTo,
                                        cis.MA1shift,
                                        cis.MA1priceLabel,
-                                       cis.MA2on, 
+                                       //cis.MA2on, 
                                        cis.MA2lineType,
                                        cis.MA2period,
                                        cis.MA2method,
                                        cis.MA2applyTo,
                                        cis.MA2shift,
                                        cis.MA2priceLabel,
-                                       cis.MA3on, 
+                                       //cis.MA3on, 
                                        cis.MA3lineType,
                                        cis.MA3period,
                                        cis.MA3method,
                                        cis.MA3applyTo,
                                        cis.MA3shift,
                                        cis.MA3priceLabel,
-                                       cis.MA4on, 
+                                       //cis.MA4on, 
                                        cis.MA4lineType,
                                        cis.MA4period,
                                        cis.MA4method,
                                        cis.MA4applyTo,
                                        cis.MA4shift,
                                        cis.MA4priceLabel,
+                                       "=",
                                        cis.ShowChannel,
                                        cis.ChannelPeriod,
                                        cis.ChannelAtrPeriod,
@@ -282,14 +282,9 @@ int MedianRenko::Init()
                                        cis.ChannelBandsDeviations, 
                                        cis.ChannelPriceLabel,
                                        cis.ChannelMidPriceLabel,
+                                       "=",
                                        true); // used in EA
 // --- all remaining settings are left at defaults since they have no impact on the EA ---
-// TopBottomPaddingPercentage,
-// showCurrentBarOpenTime,
-// SoundFileBull,
-// SoundFileBear,
-// DisplayAsBarChart
-// ShiftObj
       
     if(medianRenkoHandle == INVALID_HANDLE)
     {

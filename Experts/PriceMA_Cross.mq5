@@ -1,13 +1,15 @@
 #property copyright "Copyright 2017-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 #property link      "https://www.az-invest.eu"
-#property version   "1.06"
+#property version   "1.07"
 
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 //#define VOLUMECHART_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/Tick-chart-and-volume-chart-for-mt5
+//#define RANGEBAR_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/rangebars-for-metatrader-5
+//#define SECONDSCHART_LICENSE // uncomment when used on a Seconds TF bar chart from https://www.az-invest.eu/seconds-timeframe-chart-for-metatrader-5
 
 //
-// Uncomment only ONE of the 3 directives listed below and recompile
+// Uncomment only ONE of the 5 directives listed below and recompile
 // -----------------------------------------------------------------
 //
 //
@@ -15,6 +17,9 @@
 #define EA_ON_RENKO        // Use EA on Renko charts
 //#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
 //#define EA_ON_TICK_VOLUME_CHART  // Use EA on Tick & Volume Bar Chart
+//#define EA_ON_SECONDS_CHART // Use EA on Seconds Interval chart
+
+//#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
@@ -45,6 +50,10 @@
    #include <AZ-INVEST/SDK/VolumeBarChart.mqh>
    TickChart *customBars = NULL;
 #endif
+#ifdef EA_ON_SECONDS_CHART
+   #include <AZ-INVEST/SDK/SecondsChart.mqh>
+   SecondsChart *customBars = NULL;
+#endif
 
 #include <AZ-INVEST/SDK/TimeControl.mqh>
 #include <AZ-INVEST/SDK/TradeFunctions.mqh>
@@ -56,8 +65,9 @@ enum ENUM_TRADE_DIRECTION
    TRADE_DIRECTION_ALL = 1000,                 // Buy & Sell
 };
 
-// EA input parameters
-
+#ifdef SHOW_INDICATOR_INPUTS
+   input group "EA parameters"
+#endif
 input double               Lots = 0.1;                                  // Traded lots
 input uint                 StopLoss = 0;                                // Stop Loss
 input uint                 TakeProfit = 0;                              // Take profit
@@ -114,6 +124,10 @@ ENUM_POSITION_TYPE validation;
    static int _MA1 = VOLUMECHART_MA1;
    static int _MA2 = VOLUMECHART_MA2;
 #endif
+#ifdef EA_ON_SECONDS_CHART
+   static int _MA1 = SECONDS_MA1;
+   static int _MA2 = SECONDS_MA2;
+#endif
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -134,6 +148,9 @@ int OnInit()
       #ifdef EA_ON_TICK_VOLUME_CHART
          customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
       #endif         
+      #ifdef EA_ON_SECONDS_CHART
+         customBars = new SecondsChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif      
    }
 
    customBars.Init();

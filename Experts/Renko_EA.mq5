@@ -10,7 +10,7 @@
 // or
 // https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 // 
-#define VERSION "2.01"
+#define VERSION "2.02"
 #property version VERSION
 //#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
@@ -43,7 +43,9 @@
 //  Inputs
 //
 
-input string            InpComment0          = "==============";  // EA settings
+#ifdef SHOW_INDICATOR_INPUTS
+   input group "EA parameters"
+#endif
 input ENUM_TRADING_MODE InpMode              = TRADING_MODE_ALL;  // Trading mode
 input bool              InpStopAndReverse    = false;             // Enable Stop & Reverse
 input bool              InpCloseOnRevesal    = true;              // Close on reversal signal
