@@ -32,7 +32,7 @@ This short video will walk you through the installation process:
 [![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/00jelr1y200)
 
 ## Resources
-The robust Renko indicator already bundled with the EAs and additional idicators can be downloaded from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
+The robust Renko indicator already bundled with the EAs and additional indicators can be downloaded from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
 A version for MT4 is available from https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4
 
