@@ -17,7 +17,7 @@
 // the MedianRenko indicator attached.
 //
 
-#define SHOW_INDICATOR_INPUTS
+//#define SHOW_INDICATOR_INPUTS
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
