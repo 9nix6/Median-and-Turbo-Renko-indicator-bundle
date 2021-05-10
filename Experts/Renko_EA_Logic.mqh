@@ -33,6 +33,8 @@ struct CEaLogicPartameters
    bool                    CloseOnRevesal;
    int                     TrailStartPoints;
    int                     TrailByPoints;
+   int                     PartialCloseAtProfitPoints;
+   int                     PartialClosePercentage;      
    
    string                  StartTrading;
    string                  EndTrading;
@@ -166,9 +168,12 @@ bool CEaLogic::Initialize(CEaLogicPartameters &inputParams, MedianRenko *_median
 
    CTradeManagerParameters params2;
    {
-      params2.BEPoints           = this.inputs.BEPoints;
-      params2.TrailByPoints      = this.inputs.TrailByPoints;
-      params2.TrailStartPoints   = this.inputs.TrailStartPoints;
+      params2.BEPoints                    = this.inputs.BEPoints;
+      params2.TrailByPoints               = this.inputs.TrailByPoints;
+      params2.TrailStartPoints            = this.inputs.TrailStartPoints;
+      params2.PartialCloseAtProfitPoints  = this.inputs.PartialCloseAtProfitPoints;
+      params2.PartialClosePercentage      = this.inputs.PartialClosePercentage;      
+      
    }
         
    if(tradeManager != NULL)

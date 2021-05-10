@@ -2,7 +2,7 @@
 #property link      "https://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
-   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay314" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay317" 
 #else
    #ifdef P_RENKO_BR_PRO
       #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
@@ -220,9 +220,11 @@ int MedianRenko::Init()
 
    RENKO_SETTINGS s = medianRenkoSettings.GetCustomChartSettings(); 
    CHART_INDICATOR_SETTINGS cis = medianRenkoSettings.GetChartIndicatorSettings(); 
+   ALERT_INFO_SETTINGS als = medianRenkoSettings.GetAlertInfoSettings();
    
    medianRenkoHandle = iCustom(this.medianRenkoSymbol, _Period, RENKO_INDICATOR_NAME, 
-                                       s.barSizeInTicks,
+                                       s.barSize,
+                                       s.barSizeCalcMode,
                                        s.predefinedSettings,
                                        s.pOpen,
                                        s.pReversalShadow,
@@ -230,43 +232,37 @@ int MedianRenko::Init()
                                        s.showWicks,
                                        s.showNumberOfDays,
                                        "=",
-                                       s.atrEnabled,
                                        s.atrTimeFrame,
                                        s.atrPeriod,
-                                       s.atrPercentage,
                                        "=",
                                        s.applyOffsetToFirstBar,
                                        s.offsetValue,
                                        s.resetOpenOnNewTradingDay,
                                        "=",
-                                       showPivots,
-                                       pivotPointCalculationType,
+                                       als.showPivots,
+                                       als.pivotPointCalculationType,
                                        "=",
-                                       AlertMeWhen,
-                                       AlertNotificationType,
+                                       InpAlertMeWhen,
+                                       InpAlertNotificationType,
                                        "=",
-                                       //cis.MA1on, 
                                        cis.MA1lineType,
                                        cis.MA1period,
                                        cis.MA1method,
                                        cis.MA1applyTo,
                                        cis.MA1shift,
                                        cis.MA1priceLabel,
-                                       //cis.MA2on, 
                                        cis.MA2lineType,
                                        cis.MA2period,
                                        cis.MA2method,
                                        cis.MA2applyTo,
                                        cis.MA2shift,
                                        cis.MA2priceLabel,
-                                       //cis.MA3on, 
                                        cis.MA3lineType,
                                        cis.MA3period,
                                        cis.MA3method,
                                        cis.MA3applyTo,
                                        cis.MA3shift,
                                        cis.MA3priceLabel,
-                                       //cis.MA4on, 
                                        cis.MA4lineType,
                                        cis.MA4period,
                                        cis.MA4method,

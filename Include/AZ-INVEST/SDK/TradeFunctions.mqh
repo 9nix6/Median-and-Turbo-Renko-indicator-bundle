@@ -1,5 +1,5 @@
 //
-// Copyright 2017-2018, Artur Zas
+// Copyright 2017-2021, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
@@ -732,8 +732,26 @@ bool CMarketOrder::ClosePartial(ulong ticket, double lots)
    
    while(!IsStopped() && !result)
    {
-      result = ctrade.PositionClosePartial(ticket, NormalizeLots(symbol,lots));
+      if(_IsNettingAccount()) // Netting account type
+      {
+         // open opposite position with volume = "lots" to do a parial close
+         
+         ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
 
+         if(type == POSITION_TYPE_BUY)
+         {         
+            result = this.Short(symbol,lots,0,0);
+         }
+         else if(type == POSITION_TYPE_SELL)
+         {
+            result = this.Long(symbol,lots,0,0);
+         }
+      }
+      else // Hedging account type
+      {
+         result = ctrade.PositionClosePartial(ticket, lots);
+      }
+         
       if(result)
       {
          Sleep(500);
@@ -1072,5 +1090,3 @@ void CMarketOrder::SetTradeId(ulong tradeId)
    ctrade.SetExpertMagicNumber(tradeId);
 }
 
-
- 

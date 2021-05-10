@@ -10,8 +10,17 @@
 // or
 // https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 // 
-#define VERSION "2.02"
+#define VERSION "2.10"
+#property copyright "Copyright 2018-2021, Artur Zas"
+// GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
+#property link      "https://www.az-invest.eu"
 #property version VERSION
+#property description "Example EA: Trading based renko bar reversal signals." 
+#property description "For optinal entry & exit filters MA1, MA2, MA3 && channel" 
+#property description "need to be enabled on the inicator creating the chart." 
+#property description " "
+#property description "GNU General Public License v3.0"
+
 //#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
@@ -19,7 +28,7 @@
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
 //
-// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 //
 // SHOW_INDICATOR_INPUTS *NEEDS* to be defined, if the EA needs to be *tested in MT5's backtester*
@@ -44,24 +53,35 @@
 //
 
 #ifdef SHOW_INDICATOR_INPUTS
-   input group "EA parameters"
+   input group "### EA parameters"
 #endif
 input ENUM_TRADING_MODE InpMode              = TRADING_MODE_ALL;  // Trading mode
 input bool              InpStopAndReverse    = false;             // Enable Stop & Reverse
 input bool              InpCloseOnRevesal    = true;              // Close on reversal signal
 input int               InpOpenXSignal       = 1;                 // Open signal confirmation bars
 input int               InpCloseXSignal      = 1;                 // Close signal confirmation bars
+
+input group "### Trade parameters"
+
 input double            InpLotSize           = 0.1;               // Lot size
 input int               InpSLPoints          = 200;               // StopLoss (Points) [ 0 = OFF ]
 input int               InpTPPoints          = 400;               // TakeProfit (Points) [ 0 = OFF ]
+
+input group "### Trade management"
+
 input int               InpBEPoints          = 0;                 // BreakEven (Points) [ 0 = OFF ]
-input int               InpTrailByPoints     = 100;               // Trail by (Points) [ 0 = OFF ]
+input int               InpTrailByPoints     = 0;                 // Trail by (Points) [ 0 = OFF ]
 input int               InpTrailStartPoints  = 150;               // Start trailing after (Points)
+input int               InpPartialCloseAtProfitPoints = 0;        // Partial close at (Points) [ 0 = OFF ]
+input int               InpPartialClosePercentage = 50;           // Partial close %
+
+input group "### Trading schedule (Non stop if start = 0 & end = 0)"
 
 input string            InpStart             = "9:00";            // Start trading at (24h server time)
 input string            InpEnd               = "16:00";           // End trading at (24h server time)
-input string            InpComment2          = "Always trade";    // *** If Start = "0" & End = "0" =>
 input bool              InpCloseTradesEOD    = false;             // Close trades at "End trading" time
+
+input group "### Filter settings"
 
 input ENUM_FILTER_MODE     InpMA1Filter                  = FILTER_MODE_OFF;                  // Use MA1 filter
 input ENUM_FITER_CONDITION InpMA1FilterCond              = FILTER_CONDITION_OPEN_OR_CLOSE;   // MA1 filter condition
@@ -76,6 +96,7 @@ input ENUM_FILTER_MODE     InpSuperTrendFilter           = FILTER_MODE_OFF;     
 input ENUM_FITER_CONDITION InpSuperTrendFilterCond       = 1;                                // SuprTrend filter on last completed bars
 input int                  InpSuperTrendFilterCheckBars  = FILTER_CONDITION_OPEN_OR_CLOSE;   // SuprTrend filter condition
 
+input group "### Misc"
 input ulong             InpMagicNumber       = 82;                // EA magic number (Trade ID)
 input ulong             InpDeviationPoints   = 0;                 // Maximum deviation points
 input int               InpNumberOfRetries   = 15;                // Max. number of retries
@@ -113,6 +134,8 @@ int OnInit()
       params.BEPoints                  = InpBEPoints;
       params.TrailByPoints             = InpTrailByPoints;
       params.TrailStartPoints          = InpTrailStartPoints;
+      params.PartialCloseAtProfitPoints = InpPartialCloseAtProfitPoints;
+      params.PartialClosePercentage    = InpPartialClosePercentage;            
       params.StopAndReverse            = InpStopAndReverse;
       params.CloseOnRevesal            = InpCloseOnRevesal;
       params.StartTrading              = InpStart;

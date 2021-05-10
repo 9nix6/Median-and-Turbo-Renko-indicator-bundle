@@ -1,30 +1,36 @@
 #property copyright "Copyright 2017-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 #property link      "https://www.az-invest.eu"
-#property version   "1.07"
+#define VERSION "1.10"
+#property version VERSION
+#property description "Example EA: Trading based on moving average && price crossover." 
+#property description "MA1 needs to be enabled on the inicator creating the chart." 
+#property description " "
+#property description "GNU General Public License v3.0"
 
+//#define RANGEBAR_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/rangebars-for-metatrader-5
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 //#define VOLUMECHART_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/Tick-chart-and-volume-chart-for-mt5
-//#define RANGEBAR_LICENSE // uncomment when used on a Tick & Volume bar chart from https://www.az-invest.eu/rangebars-for-metatrader-5
 //#define SECONDSCHART_LICENSE // uncomment when used on a Seconds TF bar chart from https://www.az-invest.eu/seconds-timeframe-chart-for-metatrader-5
+//#define LINEBREAKCHART_LICENSE // uncomment when used on a Line Break chart from https://www.az-invest.eu/linebreak-chart-for-metatrader-5
 
 //
 // Uncomment only ONE of the 5 directives listed below and recompile
 // -----------------------------------------------------------------
 //
-//
-//#define EA_ON_RANGE_BARS   // Use EA on RangeBar chart 
-#define EA_ON_RENKO        // Use EA on Renko charts
-//#define EA_ON_XTICK_CHART  // Use EA on XTick Chart
-//#define EA_ON_TICK_VOLUME_CHART  // Use EA on Tick & Volume Bar Chart
-//#define EA_ON_SECONDS_CHART // Use EA on Seconds Interval chart
+//#define EA_ON_RANGE_BARS          // Use EA on RangeBar chart 
+#define EA_ON_RENKO               // Use EA on Renko charts
+//#define EA_ON_XTICK_CHART         // Use EA on XTick Chart (obsolete)
+//#define EA_ON_TICK_VOLUME_CHART   // Use EA on Tick & Volume Bar Chart
+//#define EA_ON_SECONDS_CHART       // Use EA on Seconds Interval chart
+//#define EA_ON_LINEBREAK_CHART     // Use EA on LineBreak charts
 
 //#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
 //
-// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 //
 // Uncomment the directive below and recompile for use in a backtest only
@@ -54,9 +60,14 @@
    #include <AZ-INVEST/SDK/SecondsChart.mqh>
    SecondsChart *customBars = NULL;
 #endif
+#ifdef EA_ON_LINEBREAK_CHART
+   #include <AZ-INVEST/SDK/LineBreakChart.mqh>
+   LineBreakChart *customBars = NULL;
+#endif
 
 #include <AZ-INVEST/SDK/TimeControl.mqh>
 #include <AZ-INVEST/SDK/TradeFunctions.mqh>
+#include <AZ-INVEST/SDK/TradeManager.mqh>
 
 enum ENUM_TRADE_DIRECTION 
 {
@@ -72,18 +83,26 @@ input double               Lots = 0.1;                                  // Trade
 input uint                 StopLoss = 0;                                // Stop Loss
 input uint                 TakeProfit = 0;                              // Take profit
 input int                  ConfirmationBars = 1;                        // Signal confirmation bars
-input int                  PrevSignalBars = 1;                          // Prev signal confirmation bars
+input int                  PrevSignalBars = 1;                          // Prev. signal confirmation bars
 input ENUM_TRADE_DIRECTION ValidTradeDirection = TRADE_DIRECTION_ALL;   // Valid trading type
 input bool                 CloseTradeOnSignalChange = true;             // Close trade on signal change
 input bool                 ForceSR = false;                             // Force Stop & Reverse
-input bool                 CloseTradeAfterTradingHours = true;          // Close trade after trading hours
-input ulong                DeviationPoints = 0;                         // Maximum defiation (in points)
-input double               ManualTickSize = 0.000;                      // Tick Size (0 = auto detect) 
+input group    "### Trading schedule (Non stop if start = 0 & end = 0)"
 input string               Start="9:00";                                // Start trading at 
 input string               End="17:55";                                 // End trading at
+input bool                 CloseTradeAfterTradingHours = true;          // Close trade after trading hours
+input group    "### Trade management";
+input int                  InpBEPoints          = 0;                    // BreakEven (Points) [ 0 = OFF ]
+input int                  InpTrailByPoints     = 0;                    // Trail by (Points) [ 0 = OFF ]
+input int                  InpTrailStartPoints  = 150;                  // Start trailing after (Points)
+input int                  InpPartialCloseAtProfitPoints = 0;           // Partial close at (Points) [ 0 = OFF ]
+input int                  InpPartialClosePercentage = 50;              // Partial close %
+input group    "### Misc";
 input ulong                MagicNumber=8888;                            // Assign trade ID 
+input ulong                DeviationPoints = 0;                         // Maximum defiation (in points)
+input double               ManualTickSize = 0.000;                      // Tick Size (0 = auto detect) 
 input int                  NumberOfRetries = 50;                        // Maximum number of retries
-input int                  BusyTimeout_ms = 1000;                       // Wait [ms] before retry on bussy errors
+input int                  BusyTimeout_ms = 1000;                       // Wait [ms] before retry on busy errors
 input int                  RequoteTimeout_ms = 250;                     // Wait [ms] before retry on requotes
 
 // Global data buffers 
@@ -100,10 +119,12 @@ int _prevSignalBars;
 
 // EA variables
 
-CMarketOrder *marketOrder;
-CTimeControl *timeControl;
+CMarketOrder   *marketOrder = NULL;
+CTimeControl   *timeControl = NULL;
+CTradeManager  *tradeManager = NULL;
 
 ulong currentTicket;
+CTradeManagerState tradeManagerState;
 ENUM_POSITION_TYPE currentPositionType;
 ENUM_POSITION_TYPE signal;
 ENUM_POSITION_TYPE validation;
@@ -128,6 +149,10 @@ ENUM_POSITION_TYPE validation;
    static int _MA1 = SECONDS_MA1;
    static int _MA2 = SECONDS_MA2;
 #endif
+#ifdef EA_ON_LINEBREAK_CHART
+   static int _MA1 = LINEBREAK_MA1;
+   static int _MA2 = LINEBREAK_MA2;
+#endif
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -150,10 +175,15 @@ int OnInit()
       #endif         
       #ifdef EA_ON_SECONDS_CHART
          customBars = new SecondsChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
-      #endif      
+      #endif    
+      #ifdef EA_ON_LINEBREAK_CHART
+         customBars = new LineBreakChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+      #endif        
    }
 
    customBars.Init();
+   if(customBars.GetHandle() == INVALID_HANDLE)
+      return(INIT_FAILED);
    
    signal = POSITION_TYPE_NONE;
    _confirmationBars = (ConfirmationBars < 1) ? 1 : ConfirmationBars;
@@ -180,6 +210,24 @@ int OnInit()
    }
    
    timeControl.SetValidTraingHours(Start,End);
+   
+   //
+   // Init TradeManager
+   //        
+
+   CTradeManagerParameters params2;
+   {
+      params2.BEPoints           = InpBEPoints;
+      params2.TrailByPoints      = InpTrailByPoints;
+      params2.TrailStartPoints   = InpTrailStartPoints;
+      params2.PartialCloseAtProfitPoints = InpPartialCloseAtProfitPoints;
+      params2.PartialClosePercentage = InpPartialClosePercentage;      
+   }
+        
+   if(tradeManager == NULL)
+   {
+      tradeManager = new CTradeManager(params2, marketOrder);
+   }
    
    return(INIT_SUCCEEDED);
 }
@@ -214,6 +262,12 @@ void OnDeinit(const int reason)
       customBars = NULL;
    }   
       
+   if(tradeManager != NULL)
+   {
+      delete tradeManager;      
+      tradeManager = NULL;
+   }
+      
    Comment("");
 }
 //+------------------------------------------------------------------+
@@ -221,20 +275,15 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   if(marketOrder == NULL)
+   if(marketOrder == NULL || customBars == NULL || timeControl == NULL || tradeManager == NULL)
       return;
-      
-   if(customBars.IsNewBar())
+   
+   // trade management
+     
+   if(marketOrder.IsOpen(currentTicket, _Symbol, MagicNumber))
    {
-      if(timeControl.IsScheduleEnabled())
-      {
-         Comment("EA trading schedule ON ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid());
-      }
-      else
-      {
-         Comment("EA trading schedule OFF");
-      }
-             
+      // checks done on every tick
+
       if(!timeControl.IsTradingTimeValid())
       {
          if(marketOrder.IsOpen(currentTicket,_Symbol,MagicNumber))
@@ -248,7 +297,23 @@ void OnTick()
 
          return;
       }
-         
+                 
+      tradeManager.Manage(currentTicket, tradeManagerState);               
+   }      
+     
+   // Signal handler
+      
+   if(customBars.IsNewBar())
+   {
+      if(timeControl.IsScheduleEnabled())
+      {
+         Comment("EA trading schedule ON ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid());
+      }
+      else
+      {
+         Comment("EA trading schedule OFF");
+      }
+                      
       //
       //  Get MqlRateInfo & moving average values for current, last completed bar and the bar before that...
       //
@@ -269,17 +334,19 @@ void OnTick()
          if(timeControl.IsScheduleEnabled())
          {
             Comment("EA trading schedule ("+Start+" to "+End+") | trading enabled = "+(string)timeControl.IsTradingTimeValid()+
-            "\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
-            "\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
+            //"\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
+            //"\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
             "\n Price & MA cross signal = "+marketOrder.PositionTypeToString(signal)+
+            "\n Trade manager: "+tradeManager.ToString()+
             "\n");
          }
          else
          {
             Comment("EA trading schedule not used. Trading is enabled."+
-            "\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
-            "\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
+            //"\n MA_1 [2]: "+DoubleToString(MA1[2],_Digits)+" [1]: "+DoubleToString(MA1[1],_Digits)+
+            //"\n Close[2]: "+DoubleToString(RateInfo[2].close,_Digits)+" [1]: "+DoubleToString(RateInfo[1].close,_Digits)+
             "\n Price & MA cross signal = "+marketOrder.PositionTypeToString(signal)+
+            "\n Trade manager: "+tradeManager.ToString()+
             "\n");
          }
 

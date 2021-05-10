@@ -1,14 +1,16 @@
 //
-// Copyright 2017-2020, Artur Zas
+// Copyright 2017-2021, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
 
-#property copyright "Copyright 2017-2020, Artur Zas"
+#property copyright "Copyright 2017-2021, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.11"
+#property version   "1.13"
 #property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
 #property description "as well as external indicators attached to the RenkoCharts" 
+#property strict
+//#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
 input int InpRSIPeriod=14; // RSI Period
 
@@ -16,15 +18,18 @@ input int InpRSIPeriod=14; // RSI Period
 // SHOW_INDICATOR_INPUTS *NEEDS* to be defined, if the EA needs to be *tested in MT5's backtester*
 // -------------------------------------------------------------------------------------------------
 // Using '#define SHOW_INDICATOR_INPUTS' will show the MedianRenko indicator's inputs 
-// NOT using the '#define SHOW_INDICATOR_INPUTS' statement will read the settigns a chart with 
+// NOT using the '#define SHOW_INDICATOR_INPUTS' statement will read the settings a chart with 
 // the MedianRenko indicator attached.
+// Uncomment the directive below and recompile for use in a backtest only
 //
+// #define SHOW_INDICATOR_INPUTS
 
-//#define SHOW_INDICATOR_INPUTS
+// #define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
-//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//
+// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -98,7 +103,15 @@ void OnTick()
    
    if(RsiHandle == INVALID_HANDLE)
    {
+#ifdef DEVELOPER_VERSION      
+      RsiHandle = iCustom(_Symbol, _Period, "MedianRenko\\Indicators\\MedianRenko_RSI", InpRSIPeriod, true);
+#else
+ #ifdef ULTIMATE_RENKO_LICENSE
+      RsiHandle = iCustom(_Symbol, _Period, "Ultimate Renko\\RSI", InpRSIPeriod, true);
+ #else
       RsiHandle = iCustom(_Symbol, _Period, "MedianRenko\\MedianRenko_RSI", InpRSIPeriod, true);
+ #endif
+#endif      
    }
 
    //
