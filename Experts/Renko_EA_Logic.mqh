@@ -33,6 +33,8 @@ struct CEaLogicPartameters
    bool                    CloseOnRevesal;
    int                     TrailStartPoints;
    int                     TrailByPoints;
+   int                     PartialCloseAtProfitPoints;
+   int                     PartialClosePercentage;      
    
    string                  StartTrading;
    string                  EndTrading;
@@ -166,9 +168,12 @@ bool CEaLogic::Initialize(CEaLogicPartameters &inputParams, MedianRenko *_median
 
    CTradeManagerParameters params2;
    {
-      params2.BEPoints           = this.inputs.BEPoints;
-      params2.TrailByPoints      = this.inputs.TrailByPoints;
-      params2.TrailStartPoints   = this.inputs.TrailStartPoints;
+      params2.BEPoints                    = this.inputs.BEPoints;
+      params2.TrailByPoints               = this.inputs.TrailByPoints;
+      params2.TrailStartPoints            = this.inputs.TrailStartPoints;
+      params2.PartialCloseAtProfitPoints  = this.inputs.PartialCloseAtProfitPoints;
+      params2.PartialClosePercentage      = this.inputs.PartialClosePercentage;      
+      
    }
         
    if(tradeManager != NULL)
@@ -728,14 +733,14 @@ bool CEaLogic::OkToStartBacktest(void)
       if(MQLInfoInteger((int)MQL5_TESTING) && !_ok)
       {
          int _count = 0;
-         if(MA1on && (this.inputs.MA1Filter != FILTER_MODE_OFF))
-            _count = MA1period;
-         if(MA2on && (this.inputs.MA2Filter != FILTER_MODE_OFF))
-            _count = MathMax(_count,MA2period);
-         if(MA3on && (this.inputs.MA3Filter != FILTER_MODE_OFF))
-            _count = MathMax(_count,MA3period);
-         if((ShowChannel == _SuperTrend) && (this.inputs.SuperTrendFilter != FILTER_MODE_OFF))
-            _count = MathMax(_count, ChannelPeriod); //  SuperTrendPeriod
+         if(InpMA1lineType != MA_NONE && (this.inputs.MA1Filter != FILTER_MODE_OFF))
+            _count = InpMA1period;
+         if(InpMA2lineType != MA_NONE && (this.inputs.MA2Filter != FILTER_MODE_OFF))
+            _count = MathMax(_count, InpMA2period);
+         if(InpMA3lineType != MA_NONE && (this.inputs.MA3Filter != FILTER_MODE_OFF))
+            _count = MathMax(_count, InpMA3period);
+         if((InpShowChannel == _SuperTrend) && (this.inputs.SuperTrendFilter != FILTER_MODE_OFF))
+            _count = MathMax(_count, InpChannelPeriod); 
       
          static bool _infoShown = false;
          if(!_infoShown)
