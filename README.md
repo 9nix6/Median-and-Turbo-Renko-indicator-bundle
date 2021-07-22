@@ -29,7 +29,7 @@ This short video will walk you through the installation process:
 
 ## Backtesting your EAs
 
-[![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/00jelr1y200)
+[![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/rJR3vR9wAs0)
 
 ## Resources
 The robust Renko indicator already bundled with the EAs and additional indicators can be downloaded from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
