@@ -1,5 +1,6 @@
 //
 // Copyright 2017-2021, Artur Zas
+// GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //

@@ -1,14 +1,18 @@
 //
 // Copyright 2017-2021, Artur Zas
+// GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
 //
 
 #property copyright "Copyright 2017-2021, Artur Zas"
 #property link      "https://www.az-invest.eu"
-#property version   "1.13"
-#property description "Example EA showing the way to use the MedianRenko class defined in MedianRenko.mqh" 
-#property description "as well as external indicators attached to the RenkoCharts" 
+#property version   "1.14"
+#property description "Example EA showing the use of the MedianRenko class defined in MedianRenko.mqh" 
+#property description "as well as external indicators attached to the RenkoCharts." 
+#property description " "
+#property description "The example shows how to use the external RSI indicator on the renko chart."
+#property description "RSI values for last 3 bars are printed to the Experts log on eac h new renko brick."
 #property strict
 //#define ULTIMATE_RENKO_LICENSE // uncomment when used on Ultimate Renko chart from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
@@ -24,12 +28,12 @@ input int InpRSIPeriod=14; // RSI Period
 //
 // #define SHOW_INDICATOR_INPUTS
 
-// #define DEVELOPER_VERSION // used when I develop ;) should always be commented out
+//#define DEVELOPER_VERSION // used when I develop ;) should always be commented out
 
 // Uncomment the directive below and recompile if EA is used with P-Renko BR Ultimate
 // ----------------------------------------------------------------------------------
 //
-// #define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
+//#define P_RENKO_BR_PRO     // Use in P-Renko BR Ultimate version
 
 //
 // You need to include the MedianRenko.mqh header file
@@ -104,10 +108,14 @@ void OnTick()
    if(RsiHandle == INVALID_HANDLE)
    {
 #ifdef DEVELOPER_VERSION      
-      RsiHandle = iCustom(_Symbol, _Period, "MedianRenko\\Indicators\\MedianRenko_RSI", InpRSIPeriod, true);
+      RsiHandle = iCustom(_Symbol, _Period, "CustomChartIndicators\\RSI", InpRSIPeriod, true);
 #else
  #ifdef ULTIMATE_RENKO_LICENSE
+   #ifdef P_RENKO_BR_PRO
+      RsiHandle = iCustom(_Symbol, _Period, "P-RENKO BR Ultimate\\RSI", InpRSIPeriod, true);
+   #else
       RsiHandle = iCustom(_Symbol, _Period, "Ultimate Renko\\RSI", InpRSIPeriod, true);
+   #endif
  #else
       RsiHandle = iCustom(_Symbol, _Period, "MedianRenko\\MedianRenko_RSI", InpRSIPeriod, true);
  #endif

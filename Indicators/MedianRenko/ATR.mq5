@@ -45,7 +45,7 @@ void OnInit()
 //---
    IndicatorSetInteger(INDICATOR_DIGITS,_Digits);
 //--- sets first bar from what index will be drawn
-   PlotIndexSetInteger(0,PLOT_DRAW_BEGIN,InpAtrPeriod);
+   PlotIndexSetInteger(0,PLOT_DRAW_BEGIN,Inp_AtrPeriod);
 //--- name for DataWindow and indicator subwindow label
    string short_name="ATR("+string(ExtPeriodATR)+")";
    IndicatorSetString(INDICATOR_SHORTNAME,short_name);

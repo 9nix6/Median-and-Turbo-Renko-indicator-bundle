@@ -10,6 +10,8 @@
 // or
 // https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 // 
+// The indicator is described here: https://renko-trading-robots.blogspot.com/2021/01/open-source-renko-ea-for-metatrader-5.html 
+//
 #define VERSION "2.10"
 #property copyright "Copyright 2018-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE

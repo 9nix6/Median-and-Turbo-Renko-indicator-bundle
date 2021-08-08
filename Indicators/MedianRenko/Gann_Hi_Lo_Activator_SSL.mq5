@@ -16,10 +16,10 @@
 #property indicator_color1 clrDodgerBlue, clrOrangeRed
 #property indicator_style1 STYLE_SOLID
 #property indicator_width1 2
-#property indicator_label1 "GHL (13, SMMA)"
+#property indicator_label1 "GHL_SSL"
 //--- input parameters
-input uint           InpPeriod=13;       // Period
-input ENUM_MA_METHOD InpMethod=MODE_SMMA;// Method
+input uint           InpPeriod=10;      // Period
+input ENUM_MA_METHOD InpMethod=MODE_SMA;// Method
 //--- buffers
 double GannBuffer[];
 double ColorBuffer[];
@@ -27,12 +27,12 @@ double MaHighBuffer[];
 double MaLowBuffer[];
 double TrendBuffer[];
 //--- global vars
-int ma_high_handle;
-int ma_low_handle;
-int period;
+//int ma_high_handle;
+//int ma_low_handle;
+int _period;
 
 //
-
+#include <MovingAverages.mqh>
 #include <AZ-INVEST/CustomBarConfig.mqh>
 
 //
@@ -43,7 +43,7 @@ int period;
 int OnInit()
   {
 //--- check period
-   period=(int)fmax(InpPeriod,2);
+   _period=(int)fmax(InpPeriod,2);
 //--- set buffers
    SetIndexBuffer(0,GannBuffer);
    SetIndexBuffer(1,ColorBuffer,INDICATOR_COLOR_INDEX);
@@ -57,19 +57,19 @@ int OnInit()
    ArraySetAsSeries(MaLowBuffer,true);
    ArraySetAsSeries(TrendBuffer,true);
 //--- get handles
-   ma_high_handle=iMA(NULL,0,period,0,InpMethod,PRICE_HIGH);
-   ma_low_handle =iMA(NULL,0,period,0,InpMethod,PRICE_LOW);
-   if(ma_high_handle==INVALID_HANDLE || ma_low_handle==INVALID_HANDLE)
-     {
-      Print("Unable to create handle for iMA");
-      return(INIT_FAILED);
-     }
+   //ma_high_handle=iMA(NULL,0,_period,0,InpMethod,PRICE_HIGH);
+   //ma_low_handle =iMA(NULL,0,_period,0,InpMethod,PRICE_LOW);
+   //if(ma_high_handle==INVALID_HANDLE || ma_low_handle==INVALID_HANDLE)
+   //  {
+   //   Print("Unable to create handle for iMA");
+   //   return(INIT_FAILED);
+   //  }
 //--- set indicator properties
-   string short_name=StringFormat("Gann High-Low Activator SSL (%u, %s)",period,StringSubstr(EnumToString(InpMethod),5));
+   string short_name=StringFormat("Gann High-Low Activator SSL (%u, %s)",_period,StringSubstr(EnumToString(InpMethod),5));
    IndicatorSetString(INDICATOR_SHORTNAME,short_name);
    IndicatorSetInteger(INDICATOR_DIGITS,_Digits);
 //--- set label
-   short_name=StringFormat("GHL (%u, %s)",period,StringSubstr(EnumToString(InpMethod),5));
+   short_name=StringFormat("GHL (%u, %s)",_period,StringSubstr(EnumToString(InpMethod),5));
    PlotIndexSetString(0,PLOT_LABEL,short_name);
 //--- done
    return(INIT_SUCCEEDED);
@@ -89,7 +89,7 @@ int OnCalculate(const int rates_total,
                 const int &spread[])
   {
 
-   if(rates_total<period+1)return(0);
+   //if(rates_total<_period+1)return(0);
 
    //
    // Process data through MedianRenko indicator
@@ -135,7 +135,7 @@ int OnCalculate(const int rates_total,
    int limit;
    if(rates_total<_prev_calculated || _prev_calculated<=0)
      {
-      limit=rates_total-period-1;
+      limit=rates_total-_period-1;
       ArrayInitialize(GannBuffer,EMPTY_VALUE);
       ArrayInitialize(ColorBuffer,0);
       ArrayInitialize(MaHighBuffer,0);
@@ -145,8 +145,30 @@ int OnCalculate(const int rates_total,
    else
       limit=rates_total-_prev_calculated;
 //--- get MA
-   if(CopyBuffer(ma_high_handle,0,0,limit+1,MaHighBuffer)!=limit+1)return(0);
-   if(CopyBuffer(ma_low_handle,0,0,limit+1,MaLowBuffer)!=limit+1)return(0);
+   //if(CopyBuffer(ma_high_handle,0,0,limit+1,MaHighBuffer)!=limit+1)return(0);
+   //if(CopyBuffer(ma_low_handle,0,0,limit+1,MaLowBuffer)!=limit+1)return(0);
+   
+   switch(InpMethod)
+   {
+      case MODE_SMA:
+         SimpleMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.High, MaHighBuffer);
+         SimpleMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.Low, MaLowBuffer);
+      break;
+      case MODE_EMA:
+         ExponentialMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.High, MaHighBuffer);
+         ExponentialMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.Low, MaLowBuffer);
+      break;
+      case MODE_SMMA:
+         SmoothedMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.High, MaHighBuffer);
+         SmoothedMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.Low, MaLowBuffer);
+      break;
+      case MODE_LWMA:
+         LinearWeightedMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.High, MaHighBuffer);
+         LinearWeightedMAOnBuffer(rates_total, _prev_calculated, 0, _period, customChartIndicator.Low, MaLowBuffer);
+      break;
+   }
+   
+   
 //--- main cycle
    for(int i=limit; i>=0 && !_StopFlag; i--)
      {

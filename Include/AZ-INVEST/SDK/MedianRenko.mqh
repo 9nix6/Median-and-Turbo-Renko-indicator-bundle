@@ -2,11 +2,15 @@
 #property link      "https://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
-   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay317" 
+   #define RENKO_INDICATOR_NAME "MedianRenko\\MedianRenkoOverlay319" 
 #else
    #ifdef P_RENKO_BR_PRO
-      #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
-   #else
+      #ifdef P_RENKO_ALL
+         #define RENKO_INDICATOR_NAME "P-RENKO" 
+      #else
+         #define RENKO_INDICATOR_NAME "P-RENKO BR Ultimate" 
+      #endif
+   #else      
       #ifdef ULTIMATE_RENKO_LICENSE
          #ifdef MQL5_MARKET_VERSION
             #define RENKO_INDICATOR_NAME "Market\\Median and Turbo renko indicator bundle" 
@@ -63,14 +67,15 @@ class MedianRenko
       MedianRenko();   
       MedianRenko(bool isUsedByIndicatorOnRenkoChart);   
       MedianRenko(string symbol);
-      ~MedianRenko(void);
+      ~MedianRenko();
       
       int Init();
       void Deinit();
       bool Reload();
       void ReleaseHandle();
       
-      int  GetHandle(void) { return medianRenkoHandle; };
+      int  GetHandle() { return medianRenkoHandle; };
+      string GetIndicatorName() { return RENKO_INDICATOR_NAME; };
       double GetRuntimeId();
 
       bool IsNewBar();
@@ -231,6 +236,7 @@ int MedianRenko::Init()
                                        s.pReversal,
                                        s.showWicks,
                                        s.showNumberOfDays,
+                                       s.showFromDate,
                                        "=",
                                        s.atrTimeFrame,
                                        s.atrPeriod,
@@ -276,8 +282,7 @@ int MedianRenko::Init()
                                        cis.ChannelAppliedPrice,
                                        cis.ChannelMultiplier,
                                        cis.ChannelBandsDeviations, 
-                                       cis.ChannelPriceLabel,
-                                       cis.ChannelMidPriceLabel,
+                                       cis.ChannelPriceLabels,
                                        "=",
                                        true); // used in EA
 // --- all remaining settings are left at defaults since they have no impact on the EA ---
@@ -359,11 +364,19 @@ bool MedianRenko::IsNewBar()
 {
    MqlRates currentBar[1];   
    GetMqlRates(currentBar,0,1);
-   
+        
    if(currentBar[0].time == 0)
    {
+      #ifdef SHOW_DEBUG
+         PrintFormat("Time of curent bar: %s",TimeToString(currentBar[0].time, TIME_DATE|TIME_SECONDS));
+      #endif 
       return false;
    }
+
+   #ifdef SHOW_DEBUG
+      if(prevBarTime != currentBar[0].time)
+         PrintFormat("Time of prev bar: %s(%d), curent bar: %s",TimeToString(prevBarTime, TIME_DATE|TIME_SECONDS), prevBarTime, TimeToString(currentBar[0].time, TIME_DATE|TIME_SECONDS));
+   #endif 
    
    if(prevBarTime < currentBar[0].time)
    {
