@@ -1,5 +1,6 @@
 #property copyright "Copyright 2017-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
+// Video guide: https://youtu.be/XiXY-uk6X9o
 #property link      "https://www.az-invest.eu"
 #define VERSION "1.20"
 #property version VERSION
