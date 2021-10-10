@@ -1,7 +1,7 @@
 #property copyright "Copyright 2017-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 #property link      "https://www.az-invest.eu"
-#define VERSION "1.10"
+#define VERSION "1.11"
 #property version VERSION
 #property description "Example EA: Trading based on moving average && price crossover." 
 #property description "MA1 needs to be enabled on the inicator creating the chart." 
@@ -350,70 +350,74 @@ void OnTick()
             "\n");
          }
 
-         if(signal == POSITION_TYPE_BUY)
+
+         if(!timeControl.IsScheduleEnabled() || timeControl.IsTradingTimeValid())
          {
-            if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_SELL,MagicNumber))
+            if(signal == POSITION_TYPE_BUY)
             {
-               if(currentTicket > 0 && ForceSR)
+               if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_SELL,MagicNumber))
                {
-                  if(IsTradeDirectionValid(POSITION_TYPE_SELL))
+                  if(currentTicket > 0 && ForceSR)
                   {
-                     PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
-                     marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
-                  }
-               }  
-               else if(currentTicket > 0)
-               {
-                  // close trade on signal change
-                  if(CloseTradeOnSignalChange)
+                     if(IsTradeDirectionValid(POSITION_TYPE_SELL))
+                     {
+                        PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
+                        marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                     }
+                  }  
+                  else if(currentTicket > 0)
                   {
-                     PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
-                     marketOrder.Close(currentTicket);                  
+                     // close trade on signal change
+                     if(CloseTradeOnSignalChange)
+                     {
+                        PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
+                        marketOrder.Close(currentTicket);                  
+                     }
                   }
+                  return;
                }
-               return;
-            }
-            
-            if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_BUY,MagicNumber))
-            {
-               if(IsTradeDirectionValid(POSITION_TYPE_BUY))
-                  marketOrder.Long(_Symbol,Lots,StopLoss,TakeProfit);
-                  
-               return;
-            }
-         }
-         else if(signal == POSITION_TYPE_SELL)
-         {
-            if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_BUY,MagicNumber))
-            {
-               if(currentTicket > 0 && ForceSR)
+               
+               if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_BUY,MagicNumber))
                {
                   if(IsTradeDirectionValid(POSITION_TYPE_BUY))
-                  {
-                     PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
-                     marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
-                  }
-               }   
-               else if(currentTicket > 0)
-               {
-                  // close trade on signal change
-                  if(CloseTradeOnSignalChange)
-                  {
-                     PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
-                     marketOrder.Close(currentTicket);                                    
-                  }
+                     marketOrder.Long(_Symbol,Lots,StopLoss,TakeProfit);
+                     
+                  return;
                }
-               return;
             }
-
-            if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_SELL,MagicNumber))
+            else if(signal == POSITION_TYPE_SELL)
             {
-               if(IsTradeDirectionValid(POSITION_TYPE_SELL))
-                  marketOrder.Short(_Symbol,Lots,StopLoss,TakeProfit);
-                  
-               return;
-            }
-         }         
+               if(marketOrder.IsOpen(currentTicket,_Symbol,POSITION_TYPE_BUY,MagicNumber))
+               {
+                  if(currentTicket > 0 && ForceSR)
+                  {
+                     if(IsTradeDirectionValid(POSITION_TYPE_BUY))
+                     {
+                        PrintFormat("Reversing %s position on Stop&Reverse condition (ticket:%d)", _Symbol, currentTicket);
+                        marketOrder.Reverse(currentTicket,Lots,StopLoss,TakeProfit);
+                     }
+                  }   
+                  else if(currentTicket > 0)
+                  {
+                     // close trade on signal change
+                     if(CloseTradeOnSignalChange)
+                     {
+                        PrintFormat("Closing %s position on signal change (ticket:%d)", _Symbol, currentTicket);
+                        marketOrder.Close(currentTicket);                                    
+                     }
+                  }
+                  return;
+               }
+   
+               if(!marketOrder.IsOpen(_Symbol,POSITION_TYPE_SELL,MagicNumber))
+               {
+                  if(IsTradeDirectionValid(POSITION_TYPE_SELL))
+                     marketOrder.Short(_Symbol,Lots,StopLoss,TakeProfit);
+                     
+                  return;
+               }
+            }         
+         }
       }      
    } 
 }
