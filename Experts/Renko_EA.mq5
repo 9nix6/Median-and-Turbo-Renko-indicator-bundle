@@ -12,7 +12,7 @@
 // 
 // The indicator is described here: https://renko-trading-robots.blogspot.com/2021/01/open-source-renko-ea-for-metatrader-5.html 
 //
-#define VERSION "2.10"
+#define VERSION "2.11"
 #property copyright "Copyright 2018-2021, Artur Zas"
 // GNU General Public License v3.0 -> https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/blob/master/LICENSE
 #property link      "https://www.az-invest.eu"
@@ -39,7 +39,7 @@
 // NOT using the '#define SHOW_INDICATOR_INPUTS' statement will read the settigns a chart with 
 // the MedianRenko indicator attached.
 //
-// #define SHOW_INDICATOR_INPUTS
+//#define SHOW_INDICATOR_INPUTS
 
 #define SHOW_DEBUG
 #ifdef _DEBUG
