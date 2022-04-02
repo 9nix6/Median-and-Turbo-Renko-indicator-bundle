@@ -62,6 +62,7 @@ class MedianRenkoIndicator
                   double&        price         // Price oncustom chart
                );
       bool     TimeToCustomChartTime(datetime canvasTime, datetime& customChartTime);
+      bool     CustomChartTimeToCanvasTime(datetime customChartTime, datetime& canvasTime);
 
       bool     IsNewBar;
 
@@ -97,8 +98,6 @@ class MedianRenkoIndicator
       double CalcAppliedPrice(const MqlRates &_rates, ENUM_APPLIED_PRICE applied_price);
       double CalcAppliedPrice(const double &o,const double &l,const double &h,const double &c,ENUM_APPLIED_PRICE applied_price);
 
-      ENUM_TIMEFRAMES TFMigrate(int tf);
-      datetime iTime(string symbol,int tf,int index);
       double GetArrayValueDouble(double &arr[], int index);
       long GetArrayValueLong(long &arr[], int index);
       datetime GetArrayValueDateTime(datetime &arr[], int index);
@@ -684,66 +683,6 @@ int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double
    return _count;
 }
 
-// TFMigrate: 
-// https://www.mql5.com/en/forum/2842#comment_39496
-//
-ENUM_TIMEFRAMES MedianRenkoIndicator::TFMigrate(int tf)
-{
-   switch(tf)
-   {
-      case 0: return(PERIOD_CURRENT);
-      case 1: return(PERIOD_M1);
-      case 5: return(PERIOD_M5);
-      case 15: return(PERIOD_M15);
-      case 30: return(PERIOD_M30);
-      case 60: return(PERIOD_H1);
-      case 240: return(PERIOD_H4);
-      case 1440: return(PERIOD_D1);
-      case 10080: return(PERIOD_W1);
-      case 43200: return(PERIOD_MN1);
-      
-      case 2: return(PERIOD_M2);
-      case 3: return(PERIOD_M3);
-      case 4: return(PERIOD_M4);      
-      case 6: return(PERIOD_M6);
-      case 10: return(PERIOD_M10);
-      case 12: return(PERIOD_M12);
-      case 16385: return(PERIOD_H1);
-      case 16386: return(PERIOD_H2);
-      case 16387: return(PERIOD_H3);
-      case 16388: return(PERIOD_H4);
-      case 16390: return(PERIOD_H6);
-      case 16392: return(PERIOD_H8);
-      case 16396: return(PERIOD_H12);
-      case 16408: return(PERIOD_D1);
-      case 32769: return(PERIOD_W1);
-      case 49153: return(PERIOD_MN1);      
-
-      default: return(PERIOD_CURRENT);
-   }
-}
-
-datetime MedianRenkoIndicator::iTime(string symbol,int tf,int index)
-{
-   if(index < 0)
-   {
-      return(-1);
-   }
-   
-   ENUM_TIMEFRAMES timeframe=TFMigrate(tf);
-   
-   datetime Arr[];
-   
-   if(CopyTime(symbol, timeframe, index, 1, Arr) > 0)
-   {
-      return(Arr[0]);
-   }
-   else 
-   {
-      return(-1);
-   }
-}
-
 //
 //  Function used for calculating the Apllied Price based on Renko OLHC values
 //
@@ -860,6 +799,29 @@ bool MedianRenkoIndicator::TimeToCustomChartTime(datetime canvasTime, datetime& 
    ArraySetAsSeries(Time,true);
 
    customChartTime = Time[(int)MathAbs(MathMin((double)(ArraySize(Time)-1), (double)ix))];
+   return true;
+}
+
+bool MedianRenkoIndicator::CustomChartTimeToCanvasTime(datetime customChartTime, datetime& canvasTime)
+{
+   ArraySetAsSeries(Time,true);
+   
+   int ix = -1;
+   int count = ArraySize(Time);
+   
+   for(int i=0; i<count; i++)
+   {
+      if(Time[i] <= customChartTime)
+      {
+         ix = i;
+         break;
+      }
+   }
+   
+   if(ix == -1)
+      return false;
+      
+   canvasTime = iTime(_Symbol, _Period, ix);
    return true;
 }
 
