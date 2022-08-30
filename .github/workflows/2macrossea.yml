@@ -17,8 +17,9 @@ jobs:
     steps:
     - uses: fx31337/mql-compile-action@master
       with:
-        path: "Experts/2MA_Cross.mql5"
+        path: "Experts"
         include: "."
+        log-file: "results.log"
         ignore-warnings: true
         verbose: true
         
