@@ -8,6 +8,8 @@ MQL5 header file for the "Median and Turbo Renko indicator bundle"  available fo
 
 **MedianRenkoIndicator.mqh** - This helper header file includes a **MedianRenkoIndicator** class which is used to patch MQL5 indicators to work directly on the Renko charts and use the Renko OLHC values for calculation.
 
+[![EA compiler](https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/actions/workflows/2macrossea.yml/badge.svg)](https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/actions/workflows/2macrossea.yml)
+
 **ExampleEA.mq5** - An example EA skeleton showing the use of methods included in the MedianRenko class library
 
 **ExampleEA2.mq5** - An example EA utilizing the Super Trend indicator on Renko to make trading decisions also showing the use of methods included in the MedianRenko class library
