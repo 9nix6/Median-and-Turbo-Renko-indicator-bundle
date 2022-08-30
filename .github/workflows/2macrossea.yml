@@ -1,0 +1,24 @@
+name: EA compiler
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: fx31337/mql-compile-action@master
+      with:
+        path: "Experts/2MA_Cross.mql5"
+        include: "."
+        ignore-warnings: true
+        verbose: true
+        
