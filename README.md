@@ -27,11 +27,15 @@ MQL5 header file for the "Median and Turbo Renko indicator bundle"  available fo
 All folders with header files & EA should be placed in the **MQL5** sub-folder of your Metatrader's Data Folder.
 This short video will walk you through the installation process: 
 
-[![Installing the renko SDK](http://img.youtube.com/vi/cKZKoUMrMQE/0.jpg)](http://www.youtube.com/watch?v=cKZKoUMrMQE)
+[![Installing the renko SDK](https://img.youtube.com/vi/cKZKoUMrMQE/0.jpg)](http://www.youtube.com/watch?v=cKZKoUMrMQE)
 
 ## Backtesting your EAs
 
-[![Backtesting an EA on Renko](http://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/rJR3vR9wAs0)
+[![Backtesting an EA on Renko](https://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/rJR3vR9wAs0)
+
+## Modification of standard MT5 indicators for compatibility with the renko indicator
+
+[![Indicator mods](https://i9.ytimg.com/vi_webp/Lnn7tKGXt2w/mq2.webp?sqp=CPSItJwG&rs=AOn4CLDyfVH7ITNfn4POkTFBB-RdolTUBw)](https://www.youtube.com/watch?v=Lnn7tKGXt2w)
 
 ## Resources
 The robust Renko indicator already bundled with the EAs and additional indicators can be downloaded from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
