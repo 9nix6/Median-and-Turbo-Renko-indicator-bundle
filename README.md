@@ -33,7 +33,7 @@ This short video will walk you through the installation process:
 [![Backtesting an EA on Renko](https://img.youtube.com/vi/00jelr1y200/0.jpg)](https://youtu.be/rJR3vR9wAs0)
 ## Modification of standard MT5 indicators for compatibility with the renko indicator
 
-[![Indicator mods](https://i9.ytimg.com/vi_webp/Lnn7tKGXt2w/mq2.webp?sqp=CPSItJwG&rs=AOn4CLDyfVH7ITNfn4POkTFBB-RdolTUBw)](https://www.youtube.com/watch?v=Lnn7tKGXt2w)
+[![Indicator mods](https://img.youtube.com/vi/Lnn7tKGXt2w/0.jpg)](https://www.youtube.com/watch?v=Lnn7tKGXt2w)
 ## Resources
 The robust Renko indicator already bundled with the EAs and additional indicators can be downloaded from https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5
 
