@@ -8,9 +8,8 @@
 
 double NormalizeLots(string symbol, double InputLots)
 {
-   double lotsMin    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MIN);
-   double lotsMax    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MAX);
-//   int lotsDigits  = (int) - MathLog10(SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP));
+   double lotsMin    = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double lotsMax    = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
    int lotsDigits  =  (int)MathAbs(MathLog10(SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP)));
 
    if(InputLots < lotsMin)
@@ -23,9 +22,9 @@ double NormalizeLots(string symbol, double InputLots)
 
 double VtcNormalizeLots(string symbol, double lotsToNormalize)
 {
-   double lotsMin    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MIN);
-   double lotsMax    = SymbolInfoDouble(symbol,SYMBOL_VOLUME_MAX);
-   double lotsStep   = SymbolInfoDouble(symbol,SYMBOL_VOLUME_STEP);
+   double lotsMin    = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double lotsMax    = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double lotsStep   = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
 
    if (lotsToNormalize == 0)
       return lotsMin;
@@ -43,11 +42,14 @@ double VtcNormalizeLots(string symbol, double lotsToNormalize)
 
 double NormalizePrice(string symbol, double price, double tick = 0)
 {
-   double _tick = tick ? tick : SymbolInfoDouble(symbol,SYMBOL_TRADE_TICK_SIZE);
-   int _digits = (int)SymbolInfoInteger(symbol,SYMBOL_DIGITS);
+   double _tick = tick 
+   	? tick 
+	: SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
+   
+   int _digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
    
    if (tick) 
-      return NormalizeDouble(MathRound(price/_tick)*_tick,_digits);
+      return NormalizeDouble(MathRound(price / _tick) * _tick, _digits);
    else 
-      return NormalizeDouble(price,_digits);
+      return NormalizeDouble(price, _digits);
 }
