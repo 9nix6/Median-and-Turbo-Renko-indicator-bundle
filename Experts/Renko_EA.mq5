@@ -95,8 +95,8 @@ input ENUM_FILTER_MODE     InpMA3Filter                  = FILTER_MODE_OFF;     
 input ENUM_FITER_CONDITION InpMA3FilterCond              = FILTER_CONDITION_OPEN_OR_CLOSE;   // MA3 filter condition
 input int                  InpMA3FilterCheckBars         = 1;                                // MA3 filter on last completed bars
 input ENUM_FILTER_MODE     InpSuperTrendFilter           = FILTER_MODE_OFF;                  // Use SuprTrend filter
-input ENUM_FITER_CONDITION InpSuperTrendFilterCond       = 1;                                // SuprTrend filter on last completed bars
-input int                  InpSuperTrendFilterCheckBars  = FILTER_CONDITION_OPEN_OR_CLOSE;   // SuprTrend filter condition
+input ENUM_FITER_CONDITION InpSuperTrendFilterCond       = FILTER_CONDITION_OPEN_OR_CLOSE;   // SuprTrend filter condition
+input int                  InpSuperTrendFilterCheckBars  = 1;                                // SuprTrend filter on last completed bars
 
 input group "### Misc"
 input ulong             InpMagicNumber       = 82;                // EA magic number (Trade ID)
