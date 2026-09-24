@@ -153,8 +153,8 @@ int OnInit()
       params.MA3FilterCond             = InpMA3FilterCond;
       params.MA3FilterCheckBars        = InpMA3FilterCheckBars;
       params.SuperTrendFilter          = InpSuperTrendFilter;
-      params.SuperTrendFilterCond      = InpMA3FilterCond;
-      params.SuperTrendFilterCheckBars = InpMA3FilterCheckBars;
+      params.SuperTrendFilterCond      = InpSuperTrendFilterCond;
+      params.SuperTrendFilterCheckBars = InpSuperTrendFilterCheckBars;
       params.MagicNumber               = InpMagicNumber;
       params.DeviationPoints           = InpDeviationPoints;
       params.NumberOfRetries           = InpNumberOfRetries;
