@@ -1,0 +1,32 @@
+name: Static checks
+
+# Checks that need no MetaTrader on the runner, so they actually run.
+# The EA compiler workflow cannot currently compile anything (the runner has no
+# platform), which is how a wrong include path survived in the tree -- see
+# tools/check_includes.py.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Include paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Every #include resolves
+        run: python3 tools/check_includes.py
+
+      - name: Tool tests
+        run: python3 -m unittest discover -s tools/tests -t .
