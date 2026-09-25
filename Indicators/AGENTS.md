@@ -63,7 +63,7 @@ SuperTrend), `../Include/AZ-INVEST/SDK/RSI.mqh` (TDI),
 | File | Why it stands out |
 |---|---|
 | `RSI.mq5` | The canonical port; the porting contract is documented inline. |
-| `TradeHistory.mq5` | Not a study — draws executed trades on the Renko chart. Only consumer of `CHistoryHandler` and of the Renko-time↔canvas-time mapping. **Its `#include <AZ-INVEST/Double.mqh>` does not match the repo's `Include/Double.mqh`** — see root `AGENTS.md`, risk #2. |
+| `TradeHistory.mq5` | Not a study — draws executed trades on the Renko chart. Only consumer of `CHistoryHandler` and of the Renko-time↔canvas-time mapping. Its include of `Double.mqh` was wrong until 2026-09-26 (issue #19) — it asked for `<AZ-INVEST/Double.mqh>`, which the repo does not ship, so this indicator alone would not compile from a clean checkout. `tools/check_includes.py` guards that now. |
 | `ProVolume.mq5` | Only user of `SetGetVolumeBreakdownFlag()` (buy/sell volume split), so the only one that needs real-volume instruments. |
 | `SuperTrend.mq5` | Mirrors the SuperTrend channel the Renko indicator can draw itself; `Renko_EA` filters on the indicator's own channel buffers, not on this file. Do not confuse the two when tracing a SuperTrend complaint. |
 | `Heiken_Ashi.mq5`, `OscillatorCandles.mq5` | Draw candles *on top of* Renko bricks — most sensitive to the series/shift conventions in point 5. |

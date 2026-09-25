@@ -137,11 +137,12 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
    (commit `48dbfb6`, the SuperTrend-filter input wiring fix); the committed
    `Renko_EA.ex5` dates from 2021-10-28. A customer who copies the `.ex5` still gets the
    bug. Recompile before shipping.
-2. **`Indicators/MedianRenko/TradeHistory.mq5` includes `<AZ-INVEST/Double.mqh>`, but the
-   repo ships `Include/Double.mqh`** (i.e. `MQL5/Include/Double.mqh`, not
-   `MQL5/Include/AZ-INVEST/Double.mqh`). Either the installer relocates it or this
-   indicator does not compile from a clean copy of this repo. Unverified — check against
-   an actual install before concluding.
+2. ~~`Indicators/MedianRenko/TradeHistory.mq5` includes `<AZ-INVEST/Double.mqh>` but the repo
+   ships `Include/Double.mqh`.~~ **Fixed 2026-09-26** (issue #19): no installer relocates the
+   file, and every other consumer in both this repo and `installer-builder` includes it as
+   `<Double.mqh>`, so the include was the outlier. `tools/check_includes.py` now resolves every
+   `#include <…>` in the tree and runs in CI (`static-checks.yml`), so this class of breakage
+   cannot come back silently — see "Checks that actually run" below.
 3. **Case-sensitivity.** Sources are `#include`d as `<SmoothAlgorithms.mqh>` and
    `<IncOnRingBuffer\CMAOnRingBuffer.mqh>` but stored lowercase
    (`Include/smoothalgorithms.mqh`, `Include/IncOnRingBuffer/cmaonringbuffer.mqh`).
@@ -149,6 +150,25 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
 4. **Mixed file encodings.** Several `.mqh`/`.mq5` files are UTF-16LE with BOM, the rest
    ASCII. See [`Include/AGENTS.md`](Include/AGENTS.md) — grep silently misses the UTF-16
    ones, which is how "that setting doesn't exist anywhere" happens.
+
+## Checks that actually run
+
+The `EA compiler` workflow **compiles nothing**: the runner has no MetaTrader, so every run
+since it was added has ended in `Platform cannot be found in "."!`. Do not read a green or red
+badge there as evidence about the code.
+
+`static-checks.yml` is what currently gates a push: `tools/check_includes.py` resolves every
+`#include <…>` in all 96 sources against what the repo ships, plus `tools/tests/`. It is
+stdlib-only Python and needs no platform. It knows three things a grep does not:
+
+- **UTF-16LE sources** (29 of the 96) are decoded properly, so their includes are visible at all.
+- **Platform headers** (`Trade/`, `Generic/`, `MovingAverages.mqh`, …) come from the terminal and
+  are expected to be absent here.
+- **Sibling-product headers** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
+  are referenced behind `#ifdef` and ship with those products, not this repo.
+
+Both lists live at the top of the script. If a check fires, fix the include or the file — add to
+those lists only when the header genuinely belongs elsewhere, with the reason.
 
 ## Invariants
 
