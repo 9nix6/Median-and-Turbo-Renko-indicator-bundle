@@ -24,6 +24,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INCLUDE_ROOT = REPO_ROOT / "Include"
 SOURCE_SUFFIXES = {".mq4", ".mq5", ".mqh"}
 INCLUDE_RE = re.compile(r"^\s*#include\s+<([^>]+)>", re.MULTILINE)
+# `#include "x.mqh"` resolves relative to the including file, not the include
+# root -- a different lookup, so it gets its own pattern and its own check.
+LOCAL_INCLUDE_RE = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
 
 # Headers the MetaTrader platform itself provides (MQL5/Include of any terminal).
 # Not shipped here and not expected to be.
@@ -129,9 +132,30 @@ def unresolved_includes():
     return problems
 
 
+def unresolved_local_includes():
+    """[(source, include, line)] for every `#include "..."` with no file beside it."""
+    problems = []
+    for source in source_files():
+        text = read_source(source)
+        for match in LOCAL_INCLUDE_RE.finditer(text):
+            include_path = match.group(1).strip()
+            target = source.parent / include_path.replace("\\", "/")
+            if target.exists():
+                continue
+            line = text.count("\n", 0, match.start(1)) + 1
+            problems.append((source.relative_to(REPO_ROOT), include_path, line))
+    return problems
+
+
 def main():
     sources = source_files()
     problems = unresolved_includes()
+    local_problems = unresolved_local_includes()
+
+    for source, include_path, line in local_problems:
+        print(f'{source}:{line}: #include "{include_path}" -- no such file beside it')
+    if local_problems and not problems:
+        return 1
 
     if not problems:
         print(f"All includes resolve across {len(sources)} sources.")

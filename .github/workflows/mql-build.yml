@@ -132,23 +132,37 @@ jobs:
           $ErrorActionPreference = "Stop"
           $mql5 = Join-Path $PWD "mt5\MQL5"
 
+          # Copy-Item with a wildcard source and a destination that does not
+          # exist creates a FILE named after the destination instead of a
+          # directory. That silently staged zero Experts on the first run, and
+          # MetaEditor then reported `unsupported file extension` against the
+          # stray file -- so each destination is created explicitly first.
           foreach ($dir in @("Indicators\MedianRenko", "Experts")) {
             $target = Join-Path $mql5 $dir
             if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+            New-Item -ItemType Directory -Path $target -Force | Out-Null
           }
 
-          Copy-Item -Path "Include\*" -Destination (Join-Path $mql5 "Include") -Recurse -Force
-          Copy-Item -Path "Indicators\MedianRenko" -Destination (Join-Path $mql5 "Indicators") -Recurse -Force
-          Copy-Item -Path "Experts\*" -Destination (Join-Path $mql5 "Experts") -Recurse -Force
+          Copy-Item -Path "Include\*"   -Destination (Join-Path $mql5 "Include") -Recurse -Force
+          Copy-Item -Path "Indicators\MedianRenko\*" -Destination (Join-Path $mql5 "Indicators\MedianRenko") -Recurse -Force
+          Copy-Item -Path "Experts\*"   -Destination (Join-Path $mql5 "Experts") -Recurse -Force
 
           # Stale binaries from a previous run would make a failed compile look
           # like a successful one when the artifacts are collected.
           Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
             -Recurse -Include *.ex5, *.ex4 -ErrorAction SilentlyContinue | Remove-Item -Force
 
+          # Count what the repo has against what was staged. Without this, a
+          # staging mistake reads as "everything compiled" -- which is exactly
+          # how the first run reported success for Experts while compiling none
+          # of them.
+          $expected = (Get-ChildItem -Path "Indicators\MedianRenko", "Experts" -Recurse -Include *.mq5, *.mq4).Count
           $sources = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
             -Recurse -Include *.mq5, *.mq4
-          Write-Host "Staged $($sources.Count) source file(s)."
+          Write-Host "Staged $($sources.Count) of $expected source file(s)."
+          if ($sources.Count -ne $expected) {
+            throw "Staging is incomplete: $($sources.Count) staged, $expected in the repository."
+          }
 
       - name: Compile Experts and Indicators
         id: compile
@@ -186,8 +200,9 @@ jobs:
             if ($code -ne 0 -or $errors -gt 0) { $failed = 1 }
           }
 
-          $binaries = Get-ChildItem -Path $mql5 -Recurse -Include *.ex5 -ErrorAction SilentlyContinue
-          Write-Host "Produced $($binaries.Count) binary file(s)."
+          $binaries = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
+            -Recurse -Include *.ex5 -ErrorAction SilentlyContinue
+          Write-Host "Produced $($binaries.Count) binary file(s) from this repository's sources."
           "binaries=$($binaries.Count)" >> $env:GITHUB_OUTPUT
 
           if ($failed -ne 0) {
