@@ -116,7 +116,7 @@ int OnInit()
 #ifdef DEVELOPER_VERSION
    medianRenko = new MedianRenko();
 #else 
-   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+   medianRenko = new MedianRenko(MQLInfoInteger((int)MQL_TESTER) ? false : true);
 #endif
    if(medianRenko == NULL)
       return(INIT_FAILED);

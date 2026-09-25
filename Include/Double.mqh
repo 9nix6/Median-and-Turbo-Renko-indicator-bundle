@@ -535,7 +535,8 @@ string CDouble::ToString(double num, int digits = 8)
 //+------------------------------------------------------------------+
 int CDouble::GetDigits(double floating_point)
 {
-   CDouble num = floating_point;
+   CDouble num;
+   num = floating_point;
    num.Digits(14);
    int i = 0;
    for (i = 0; num != round(num.AsRawDouble()); num *= 10, i++)
@@ -577,7 +578,9 @@ bool CDoubleVector::Add(const double value)
 {
    CDouble *dub = new CDouble;
    dub = value;
-   return Add(dub);
+   // CArrayObj::Add(CObject*) is hidden by this class's own Add(const double),
+   // so an unqualified Add(dub) resolves back to this overload.
+   return CArrayObj::Add(dub);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -590,7 +593,7 @@ bool CDoubleVector::AssignDoubleArray(const double &arr[])
    {
       CDouble *dub = new CDouble;
       dub = arr[i];
-      if (!Add(dub))
+      if (!CArrayObj::Add(dub))
          return false;
    }
    return true;

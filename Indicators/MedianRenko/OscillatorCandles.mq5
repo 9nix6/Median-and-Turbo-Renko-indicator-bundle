@@ -197,23 +197,23 @@ int OnCalculate(const int rates_total,
    switch(Indicator)
      {
       case INDICATOR_MACD:
-         if(MACD(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
+         if(CalculateMACD(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
          return(0);
          break;
       case INDICATOR_STOCHASTIC:
-         if(Stochastic(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
+         if(CalculateStochastic(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
          return(0);
          break;
       case INDICATOR_RSI:
-         if(RSI(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
+         if(CalculateRSI(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
          return(0);
          break;
       case INDICATOR_CCI:
-         if(CCI(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
+         if(CalculateCCI(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
          return(0);
          break;
       case INDICATOR_MOMENTUM:
-         if(Momentum(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
+         if(CalculateMomentum(customChartIndicator.GetRatesTotal(),_prev_calculated,customChartIndicator.High,customChartIndicator.Low,customChartIndicator.Close)!=toFill)
          return(0);
      }
 //--- return value of prev_calculated for next call
@@ -222,7 +222,7 @@ int OnCalculate(const int rates_total,
 //+------------------------------------------------------------------+
 //| Moving Average Convergence/Divergence                            |
 //+------------------------------------------------------------------+
-int MACD(const int rates_total,
+int CalculateMACD(const int rates_total,
          const int prev_calculated,
          const double &high[],
          const double &low[],
@@ -275,7 +275,7 @@ int MACD(const int rates_total,
       ColorBuffer[i]=(CloseBuffer[i]>OpenBuffer[i])?0:1;
       //---horizontal value line
       if(PriceLine)
-         PriceLine(CloseBuffer[i]);
+         DrawPriceLine(CloseBuffer[i]);
       count++;
      }
 //--- macd done. return count.
@@ -284,7 +284,7 @@ int MACD(const int rates_total,
 //+------------------------------------------------------------------+
 //| Stochastic Oscillator                                            |
 //+------------------------------------------------------------------+
-int Stochastic(const int rates_total,
+int CalculateStochastic(const int rates_total,
                const int prev_calculated,
                const double &high[],
                const double &low[],
@@ -370,7 +370,7 @@ int Stochastic(const int rates_total,
       ColorBuffer[i]=(CloseBuffer[i]>OpenBuffer[i])?0:1;
       //---horizontal value line
       if(PriceLine)
-         PriceLine(CloseBuffer[i]);
+         DrawPriceLine(CloseBuffer[i]);
       count++;
      }
 //--- stochastic done. return count.
@@ -379,7 +379,7 @@ int Stochastic(const int rates_total,
 //+------------------------------------------------------------------+
 //| Relative Strength index                                          |
 //+------------------------------------------------------------------+
-int RSI(const int rates_total,
+int CalculateRSI(const int rates_total,
         const int prev_calculated,
         const double &high[],
         const double &low[],
@@ -472,7 +472,7 @@ int RSI(const int rates_total,
       ColorBuffer[i]=(CloseBuffer[i]>OpenBuffer[i])?0:1;
       //---horizontal value line
       if(PriceLine)
-         PriceLine(CloseBuffer[i]);
+         DrawPriceLine(CloseBuffer[i]);
       count++;
      }
 //---rsi done.return count.
@@ -481,7 +481,7 @@ int RSI(const int rates_total,
 //+------------------------------------------------------------------+
 //| Commodity Channel Index                                          |
 //+------------------------------------------------------------------+
-int CCI(const int rates_total,
+int CalculateCCI(const int rates_total,
         const int prev_calculated,
         const double &high[],
         const double &low[],
@@ -550,7 +550,7 @@ int CCI(const int rates_total,
       ColorBuffer[i]=(CloseBuffer[i]>OpenBuffer[i])?0:1;
       //---horizontal value line
       if(PriceLine)
-         PriceLine(CloseBuffer[i]);
+         DrawPriceLine(CloseBuffer[i]);
       count++;
      }
 //---cci done. return count.
@@ -559,7 +559,7 @@ int CCI(const int rates_total,
 //+------------------------------------------------------------------+
 //| Momentum                                                         |
 //+------------------------------------------------------------------+
-int Momentum(const int rates_total,
+int CalculateMomentum(const int rates_total,
              const int prev_calculated,
              const double &high[],
              const double &low[],
@@ -610,7 +610,7 @@ int Momentum(const int rates_total,
       ColorBuffer[i]=(CloseBuffer[i]>OpenBuffer[i])?0:1;
       //---horizontal value line
       if(PriceLine)
-         PriceLine(CloseBuffer[i]);
+         DrawPriceLine(CloseBuffer[i]);
       count++;
      }
 //--- momentum done. return count
@@ -619,7 +619,7 @@ int Momentum(const int rates_total,
 //+------------------------------------------------------------------+
 //| Horizontal value line                                            |
 //+------------------------------------------------------------------+
-void PriceLine(const double &close_price)
+void DrawPriceLine(const double &close_price)
   {
    if(ObjectFind(chartID,priceLine)!=OBJ_NONE)
       ObjectDelete(chartID,priceLine);

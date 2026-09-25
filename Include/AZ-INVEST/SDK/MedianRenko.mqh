@@ -170,7 +170,7 @@ void MedianRenko::ReleaseHandle()
 
 int MedianRenko::Init()
 {
-   if(!MQLInfoInteger((int)MQL5_TESTING))
+   if(!MQLInfoInteger((int)MQL_TESTER))
    {
       if(usedByIndicatorOnRenkoChart) 
       {

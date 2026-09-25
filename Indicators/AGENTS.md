@@ -63,7 +63,7 @@ SuperTrend), `../Include/AZ-INVEST/SDK/RSI.mqh` (TDI),
 | File | Why it stands out |
 |---|---|
 | `RSI.mq5` | The canonical port; the porting contract is documented inline. |
-| `TradeHistory.mq5` | Not a study — draws executed trades on the Renko chart. Only consumer of `CHistoryHandler` and of the Renko-time↔canvas-time mapping. Its include of `Double.mqh` was wrong until 2026-09-26 (issue #19) — it asked for `<AZ-INVEST/Double.mqh>`, which the repo does not ship, so this indicator alone would not compile from a clean checkout. `tools/check_includes.py` guards that now. |
+| `TradeHistory.mq5` | Not a study — draws executed trades on the Renko chart. Only consumer of `CHistoryHandler` and of the Renko-time↔canvas-time mapping. Includes `<Double.mqh>` from the `Include/` root, not from `Include/AZ-INVEST/` — `tools/check_includes.py` holds every include in the tree to that. |
 | `ProVolume.mq5` | Only user of `SetGetVolumeBreakdownFlag()` (buy/sell volume split), so the only one that needs real-volume instruments. |
 | `SuperTrend.mq5` | Mirrors the SuperTrend channel the Renko indicator can draw itself; `Renko_EA` filters on the indicator's own channel buffers, not on this file. Do not confuse the two when tracing a SuperTrend complaint. |
 | `Heiken_Ashi.mq5`, `OscillatorCandles.mq5` | Draw candles *on top of* Renko bricks — most sensitive to the series/shift conventions in point 5. |
@@ -95,7 +95,8 @@ wrong path gets "cannot load indicator" even though the file is installed.
 - Two filenames contain spaces (`ADX Cross Alerts.mq5`,
   `Ozymandias System Alert MT5 Indicator.mq5`) and one contains parentheses
   (`CCI(alternative).mq5`) — quote paths in any script.
-- The committed `.ex5` here are **not** rebuilt by CI (`.github/workflows/2macrossea.yml`
-  compiles `Experts/` only). Assume an `.ex5` in this folder may lag its `.mq5`.
+- CI compiles every `.mq5` here, but it builds into its own workspace — **the committed `.ex5` in
+  this folder are never rewritten**, so assume one may lag its `.mq5`. The binaries attached to a
+  release are the freshly built ones.
 - These are third-party sources under several licences. Carrying a fix upstream, or
   relicensing, is not automatic — check each file's own header.

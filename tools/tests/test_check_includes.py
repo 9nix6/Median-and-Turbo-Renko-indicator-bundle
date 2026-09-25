@@ -92,6 +92,16 @@ class TheRepositoryItself(unittest.TestCase):
         self.assertGreater(len(self.m.source_files()), 90)
         self.assertGreater(len(self.m.shipped_headers()), 20)
 
+    def test_every_quoted_include_has_a_file_beside_it(self):
+        """`#include "x.mqh"` resolves next to the including file, not against
+        the include root -- Experts/Renko_EA.mq5 relies on that."""
+        problems = self.m.unresolved_local_includes()
+        self.assertEqual(
+            problems,
+            [],
+            "\n".join(f'{s}:{ln}: #include "{i}"' for s, i, ln in problems),
+        )
+
     def test_tradehistory_includes_double_at_the_root(self):
         """The specific regression: the header ships at Include/Double.mqh, and
         every other consumer in both repos includes it without a prefix."""
