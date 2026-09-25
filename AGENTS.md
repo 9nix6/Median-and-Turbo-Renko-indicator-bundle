@@ -121,26 +121,23 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
   one-to-one — the install step is literally "copy these three folders into `MQL5/`"
   (as `README.md` says). A file compiled outside that layout will fail on `#include`.
 - **`.ex5` artifacts sit next to their `.mq5` and are committed to git** (70 of them, no
-  `.gitignore`). They are the build output *and* part of what customers get. This means
-  a committed `.ex5` can be stale relative to a source fix — check before telling a
-  customer to just copy the file (see "Known risks" below).
+  `.gitignore`). They are the build output *and* part of what customers get. **CI does not rewrite
+  them** — it compiles into its own workspace and attaches those binaries to a release. So a
+  committed `.ex5` goes stale the moment its source changes, and refreshing it is a deliberate act:
+  take the `compiled-binaries` artifact from a green `MQL Build` run on `master` and commit it.
+  Whether they should be committed at all is an open question — a release archive already carries
+  binaries that provably match their sources.
 - **CI compiles everything** — `.github/workflows/mql-build.yml`, see the CI section below.
   It does not refresh the committed `.ex5` files; it builds its own copies and attaches them
   to a release.
 
-## Known risks / things that looked wrong while surveying
+## Known risk
 
-Flagged, unverified fixes — do not "fix" these as a side effect of another task.
-
-1. **`Experts/Renko_EA.ex5` is stale.** The committed binary dates from 2021-10-28 and predates
-   the SuperTrend-filter input wiring fix in `Renko_EA.mq5`, so a customer who copies the `.ex5`
-   still gets that bug. Recompile before shipping, or hand them a release archive — those carry
-   binaries built by CI from the sources beside them.
-2. **The `.set` handshake still has no version field.** `Load()` now rejects a settings file whose
-   size does not match the structs this build expects, which catches any layout change that adds,
-   removes or retypes a field. A *same-size reordering* is still undetectable — that needs a
-   version field in the file, and the writer is the closed-source indicator, so it cannot be added
-   from this repository alone. See `Include/AGENTS.md`.
+**The `.set` handshake has no version field.** `Load()` now rejects a settings file whose
+`Load()` rejects a settings file whose size does not match the structs this build expects, which
+catches any layout change that adds, removes or retypes a field. A *same-size reordering* is still
+undetectable — that needs a version field in the file, and the writer is the closed-source
+indicator, so it cannot be added from this repository alone. See `Include/AGENTS.md`.
 
 ## CI — `MQL Build` (`.github/workflows/mql-build.yml`)
 
