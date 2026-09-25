@@ -535,7 +535,8 @@ string CDouble::ToString(double num, int digits = 8)
 //+------------------------------------------------------------------+
 int CDouble::GetDigits(double floating_point)
 {
-   CDouble num = floating_point;
+   CDouble num;
+   num = floating_point;
    num.Digits(14);
    int i = 0;
    for (i = 0; num != round(num.AsRawDouble()); num *= 10, i++)

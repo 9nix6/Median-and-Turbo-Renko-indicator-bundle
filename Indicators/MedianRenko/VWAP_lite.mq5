@@ -321,7 +321,7 @@ int OnCalculate(const int       rates_total,
             nTotalTPV[nIdx] = (nPriceArr[nIdx] * customChartIndicator.Tick_volume[nIdx]);
             nTotalVol[nIdx] = (double)customChartIndicator.Tick_volume[nIdx];
          } 
-         else if(customChartIndicator.Real_volume[nIdx] && customChartIndicator.Tick_volume[nIdx] ) 
+         else if(customChartIndicator.Real_volume[nIdx] != 0 && customChartIndicator.Tick_volume[nIdx] != 0) 
          {
            // Print("real vol = "+customChartIndicator.Real_volume[nIdx]);
             nTotalTPV[nIdx] = (nPriceArr[nIdx] * customChartIndicator.Real_volume[nIdx]);

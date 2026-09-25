@@ -190,20 +190,31 @@ jobs:
               if (-not $text) { $text = Get-Content $log -Raw }
               Write-Host $text
               $errors = ([regex]::Matches($text, "(?m):\s*error\s")).Count
-              $summary = [regex]::Match($text, "result\s+(\d+)\s+errors?")
-              if ($summary.Success) { $errors = [Math]::Max($errors, [int]$summary.Groups[1].Value) }
+              $warnings = ([regex]::Matches($text, "(?m):\s*warning\s")).Count
+              $summary = [regex]::Match($text, "result\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?")
+              if ($summary.Success) {
+                $errors = [Math]::Max($errors, [int]$summary.Groups[1].Value)
+                $warnings = [Math]::Max($warnings, [int]$summary.Groups[2].Value)
+              }
             } else {
               Write-Host "No log produced by MetaEditor."
               # No log and nothing compiled is a failure, not a clean run.
               $errors = 1
+              $warnings = 0
             }
             Write-Host "::endgroup::"
 
             # MetaEditor's exit code is the number of files it compiled, not an
             # error count -- a fully successful directory build exits non-zero.
             # The log is the only signal that distinguishes success from failure.
-            Write-Host "$target -- $code file(s) compiled, $errors error(s) reported"
-            if ($errors -gt 0) { $failed = 1 }
+            Write-Host "$target -- $code file(s) compiled, $errors error(s), $warnings warning(s)"
+
+            # Warnings fail the build too. A warning here is the compiler naming
+            # something it had to guess at -- a deprecated symbol, a non-boolean
+            # condition, a header local shadowing a consumer's global. Left to
+            # accumulate they stop being read at all, and the one that matters
+            # arrives invisible among them.
+            if ($errors -gt 0 -or $warnings -gt 0) { $failed = 1 }
           }
 
           $binaries = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
@@ -212,7 +223,7 @@ jobs:
           "binaries=$($binaries.Count)" >> $env:GITHUB_OUTPUT
 
           if ($failed -ne 0) {
-            Write-Error "Compilation reported errors -- see the logs above."
+            Write-Error "Compilation reported errors or warnings -- see the logs above."
             exit 1
           }
 

@@ -82,7 +82,7 @@ CMarketOrder   *marketOrder = NULL;
 int OnInit()
 {
    if(medianRenko == NULL)
-       medianRenko = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+       medianRenko = new MedianRenko(MQLInfoInteger((int)MQL_TESTER) ? false : true);
    
    medianRenko.Init();
    if(medianRenko.GetHandle() == INVALID_HANDLE)

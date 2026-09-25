@@ -173,8 +173,13 @@ One workflow, three stages, each gating the next.
   staged sources matches the repository. Both guards exist so that an incomplete stage fails loudly
   instead of reading as a clean compile.
 - **All 7 sources under `Experts/` and all 64 under `Indicators/MedianRenko/` are compiled.**
-- MetaEditor's exit code is its error count, and its log is UTF-16LE — both are handled; the job
-  fails on either signal.
+- MetaEditor's exit code is the **number of files it compiled**, not an error count — a clean
+  directory build exits non-zero. The UTF-16LE log is the authoritative signal, and the job fails
+  on any error *or any warning*.
+- **Warnings fail the build.** A warning is the compiler naming something it had to guess at: a
+  deprecated symbol, a non-boolean condition, a header local shadowing a consumer's global. Fix it
+  rather than suppressing it — the reason to keep the count at zero is that a tolerated backlog
+  stops being read, and the warning that matters arrives invisible among the rest.
 
 **3. `Release`** — only on a tag push (`3.19.5`) or a `workflow_dispatch` carrying a version.
 - Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a

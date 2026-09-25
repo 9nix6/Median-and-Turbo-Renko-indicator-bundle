@@ -502,8 +502,8 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
    if(handle == INVALID_HANDLE)
       return -1;
 
-   int _count = CopyBuffer(handle,RENKO_OPEN,start,count,temp);
-   if(_count == -1)
+   int copied = CopyBuffer(handle,RENKO_OPEN,start,count,temp);
+   if(copied == -1)
    {
       int errorCode = GetLastError();
       if(errorCode == ERR_INDICATOR_DATA_NOT_FOUND)
@@ -515,10 +515,10 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
          return -1;
    }   
       
-   if(_count < count)
+   if(copied < count)
    {
       #ifdef DISPLAY_DEBUG_MSG
-         PrintFormat("Fixing offset (req:%d res:%d)",count,_count);
+         PrintFormat("Fixing offset (req:%d res:%d)",count,copied);
       #endif
       
       ArrayInitialize(o,0x0);
@@ -544,52 +544,52 @@ int MedianRenkoIndicator::GetOLHCForIndicatorCalc(double &o[],double &l[],double
 
       // less data - indicator requres more
       
-      ArrayCopy(o,temp,(count-_count),0);
+      ArrayCopy(o,temp,(count-copied),0);
 
-      if(CopyBuffer(handle,RENKO_LOW,start,_count,temp) == -1)
+      if(CopyBuffer(handle,RENKO_LOW,start,copied,temp) == -1)
          return -1;
-      ArrayCopy(l,temp,(count-_count),0);
+      ArrayCopy(l,temp,(count-copied),0);
          
-      if(CopyBuffer(handle,RENKO_HIGH,start,_count,temp) == -1)
+      if(CopyBuffer(handle,RENKO_HIGH,start,copied,temp) == -1)
          return -1;
-      ArrayCopy(h,temp,(count-_count),0);
+      ArrayCopy(h,temp,(count-copied),0);
 
-      if(CopyBuffer(handle,RENKO_CLOSE,start,_count,temp) == -1)
+      if(CopyBuffer(handle,RENKO_CLOSE,start,copied,temp) == -1)
          return -1;
 
-      ArrayCopy(c,temp,(count-_count),0);
+      ArrayCopy(c,temp,(count-copied),0);
       
       if(getTime)
       {
-         if(CopyBuffer(handle,RENKO_BAR_OPEN_TIME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_BAR_OPEN_TIME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(t,temp,(count-_count),0);      
+         ArrayCopy(t,temp,(count-copied),0);      
       }
       
       if(getVolumes)
       {
-         if(CopyBuffer(handle,RENKO_TICK_VOLUME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_TICK_VOLUME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(tickVolume,temp,(count-_count),0);
+         ArrayCopy(tickVolume,temp,(count-copied),0);
    
-         if(CopyBuffer(handle,RENKO_REAL_VOLUME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_REAL_VOLUME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(realVolume,temp,(count-_count),0);      
+         ArrayCopy(realVolume,temp,(count-copied),0);      
       }
       
       if(getVolumeBreakdown)
       {      
-         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_BUY_VOLUME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(buyVolume,temp,(count-_count),0);
+         ArrayCopy(buyVolume,temp,(count-copied),0);
 
-         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_SELL_VOLUME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(sellVolume,temp,(count-_count),0);
+         ArrayCopy(sellVolume,temp,(count-copied),0);
 
-         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,_count,temp) == -1)
+         if(CopyBuffer(handle,RENKO_BUYSELL_VOLUME,start,copied,temp) == -1)
             return -1;
-         ArrayCopy(buySellVolume,temp,(count-_count),0);
+         ArrayCopy(buySellVolume,temp,(count-copied),0);
       }
    }
    else
@@ -647,11 +647,11 @@ int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double
 {
    dataReady = true;
    
-   int _count = GetOLHCForIndicatorCalc(o,l,h,c,t,tickVolume,realVolume,buyVolume,sellVolume,buySellVolume,start,count);
-   if(_count < 0)
+   int copied = GetOLHCForIndicatorCalc(o,l,h,c,t,tickVolume,realVolume,buyVolume,sellVolume,buySellVolume,start,count);
+   if(copied < 0)
    {
       dataReady = false;
-      return _count;
+      return copied;
    }
    if(applied_price == PRICE_CLOSE) 
    {
@@ -671,16 +671,16 @@ int MedianRenkoIndicator::GetOLHCAndApplPriceForIndicatorCalc(double &o[],double
    }
    else
    {       
-      if(ArrayResize(price,_count) == -1)
+      if(ArrayResize(price,copied) == -1)
          return -1;      
 
-      for(int i=0; i<_count; i++)
+      for(int i=0; i<copied; i++)
       {
          price[i] = CalcAppliedPrice(o[i],l[i],h[i],c[i],_applied_price);
       }
    }
       
-   return _count;
+   return copied;
 }
 
 //

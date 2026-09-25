@@ -162,22 +162,22 @@ int OnInit()
    if(customBars == NULL)
    {
       #ifdef EA_ON_RANGE_BARS
-         customBars = new RangeBars(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new RangeBars(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif
       #ifdef EA_ON_RENKO
-         customBars = new MedianRenko(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new MedianRenko(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif
       #ifdef EA_ON_XTICK_CHART   
-         customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new TickChart(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif   
       #ifdef EA_ON_TICK_VOLUME_CHART
-         customBars = new TickChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new TickChart(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif         
       #ifdef EA_ON_SECONDS_CHART
-         customBars = new SecondsChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new SecondsChart(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif    
       #ifdef EA_ON_LINEBREAK_CHART
-         customBars = new LineBreakChart(MQLInfoInteger((int)MQL5_TESTING) ? false : true);
+         customBars = new LineBreakChart(MQLInfoInteger((int)MQL_TESTER) ? false : true);
       #endif        
    }
 

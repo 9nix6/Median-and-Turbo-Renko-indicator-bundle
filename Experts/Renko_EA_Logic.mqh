@@ -730,7 +730,7 @@ bool CEaLogic::OkToStartBacktest(void)
 {
    #ifdef SHOW_INDICATOR_INPUTS   
       static bool _ok = false;
-      if(MQLInfoInteger((int)MQL5_TESTING) && !_ok)
+      if(MQLInfoInteger((int)MQL_TESTER) && !_ok)
       {
          int _count = 0;
          if(InpMA1lineType != MA_NONE && (this.inputs.MA1Filter != FILTER_MODE_OFF))
