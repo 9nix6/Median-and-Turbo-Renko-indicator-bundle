@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright 2018, Artur Zas
 // https://www.az-invest.eu 
 // https://www.mql5.com/en/users/arturz
@@ -6,13 +6,13 @@
 
 #ifdef __MQL5__
    //--- class for performing trade operations
-   #include <Trade\Trade.mqh>
+   #include <Trade/Trade.mqh>
    CTrade trade;
    //--- class for working with orders
-   #include <Trade\OrderInfo.mqh>
+   #include <Trade/OrderInfo.mqh>
    COrderInfo orderinfo;
    //--- class for working with positions
-   #include <Trade\PositionInfo.mqh>
+   #include <Trade/PositionInfo.mqh>
    CPositionInfo positioninfo;
 
    //--- introduce the predefined variables from MQL4 for versatility of the code

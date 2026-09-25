@@ -1,4 +1,4 @@
-class CIndicatorAccess
+﻿class CIndicatorAccess
 {
    private:
    

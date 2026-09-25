@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                                    HalfTrend.mq5 |
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
@@ -61,8 +61,8 @@ double arrup[], arrdwn[];
 
 #include <AZ-INVEST/CustomBarConfig.mqh>
 #include <AZ-INVEST/SDK/IndicatorAccess.mqh>
-#include <IncOnRingBuffer\CATROnRingBuffer.mqh>
-#include <IncOnRingBuffer\CMAOnRingBuffer.mqh>
+#include <IncOnRingBuffer/catronringbuffer.mqh>
+#include <IncOnRingBuffer/cmaonringbuffer.mqh>
 
 CIndicatorAccess iAccess;
 CATROnRingBuffer atr;

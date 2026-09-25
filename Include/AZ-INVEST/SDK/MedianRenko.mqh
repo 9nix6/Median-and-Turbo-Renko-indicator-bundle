@@ -1,4 +1,4 @@
-#property copyright "Copyright 2018-2021, Level Up Software"
+﻿#property copyright "Copyright 2018-2021, Level Up Software"
 #property link      "https://www.az-invest.eu"
 
 #ifdef DEVELOPER_VERSION
@@ -48,7 +48,7 @@
 #define RENKO_BUYSELL_VOLUME     19
 #define RENKO_RUNTIME_ID         20
 
-#include <az-invest/sdk/RenkoCustomChartSettings.mqh>
+#include <AZ-INVEST/SDK/RenkoCustomChartSettings.mqh>
 
 class MedianRenko
 {

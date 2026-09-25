@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                             CADXOnRingBuffer.mqh |
 //|                               Copyright 2012, Konstantin Gruzdev |
 //|                            https://login.mql5.com/ru/users/Lizar |
@@ -8,7 +8,7 @@
 #property link        "https://login.mql5.com/ru/users/Lizar"
 
 //--- Class to calculate the MA using the ring buffer:
-#include <IncOnRingBuffer\CMAOnRingBuffer.mqh>
+#include <IncOnRingBuffer/cmaonringbuffer.mqh>
 //+------------------------------------------------------------------+
 //| Class CADXOnRingBuffer                                           |
 //| Appointment: class is designed for the calculation of the        |

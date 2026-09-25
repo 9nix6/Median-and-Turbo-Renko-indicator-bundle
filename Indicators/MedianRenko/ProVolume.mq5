@@ -1,4 +1,4 @@
-#property copyright "2017-2020, Artur Zas"
+﻿#property copyright "2017-2020, Artur Zas"
 #property link      "http://www.az-invest.eu"
 //---- indicator settings
 #property indicator_separate_window

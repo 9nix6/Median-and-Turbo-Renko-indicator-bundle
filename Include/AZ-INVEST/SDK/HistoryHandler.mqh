@@ -1,4 +1,4 @@
-#include <Generic/ArrayList.mqh>
+﻿#include <Generic/ArrayList.mqh>
 #include <Trade/DealInfo.mqh>
 
 struct TradeInfoObject

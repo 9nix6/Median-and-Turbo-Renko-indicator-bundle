@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                              CMAOnRingBuffer.mqh |
 //|                               Copyright 2012, Konstantin Gruzdev |
 //|                            https://login.mql5.com/ru/users/Lizar |
@@ -8,7 +8,7 @@
 #property link        "https://login.mql5.com/ru/users/Lizar"
 
 //--- Class for working with the ring buffer of data:
-#include <IncOnRingBuffer\CArrayRing.mqh>
+#include <IncOnRingBuffer/carrayring.mqh>
 //+------------------------------------------------------------------+
 //| Class CMAOnRingBuffer                                            |
 //| Appointment: class is designed to calculate a moving averages    |

@@ -1,4 +1,4 @@
-#property description "Linear Regression"
+﻿#property description "Linear Regression"
 #property description "https://www.mql5.com/en/articles/270"
 #property copyright   "ds2"
 #property version     "1.0"

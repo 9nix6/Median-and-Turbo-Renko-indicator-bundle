@@ -102,6 +102,32 @@ class TheRepositoryItself(unittest.TestCase):
             "\n".join(f'{s}:{ln}: #include "{i}"' for s, i, ln in problems),
         )
 
+    def test_no_source_is_saved_as_utf16(self):
+        """UTF-16 files are invisible to grep, git grep and GitHub code search --
+        they return no match rather than reporting a skip, so a search that should
+        have hit reads as "this repository does not contain that"."""
+        offenders = self.m.utf16_sources()
+        self.assertEqual(offenders, [], "\n".join(str(p) for p in offenders))
+
+    def test_every_source_has_a_utf8_bom(self):
+        """MetaEditor reads a BOM-less file as ANSI, which mangles the Portuguese
+        input labels and Cyrillic comments some of these files carry."""
+        missing = [
+            p.relative_to(REPO_ROOT)
+            for p in self.m.source_files()
+            if p.read_bytes()[:3] != b"\xef\xbb\xbf"
+        ]
+        self.assertEqual(missing, [], "\n".join(str(p) for p in missing))
+
+    def test_every_include_matches_the_on_disk_spelling(self):
+        """Case-only differences resolve on Windows and fail everywhere else."""
+        problems = self.m.miscased_includes()
+        self.assertEqual(
+            problems,
+            [],
+            "\n".join(f"{s}:{ln}: <{i}> vs <{a}>" for s, i, a, ln in problems),
+        )
+
     def test_tradehistory_includes_double_at_the_root(self):
         """The specific regression: the header ships at Include/Double.mqh, and
         every other consumer in both repos includes it without a prefix."""
