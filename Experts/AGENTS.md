@@ -99,8 +99,8 @@ the Daily timeframe.
 - Committed `.ex5` files sit next to the sources and **can lag them**. As of this writing
   `Renko_EA.ex5` (2021-10-28) predates the 2026-09-25 SuperTrend-filter fix in
   `Renko_EA.mq5`. Recompile in MetaEditor before handing a customer the binary.
-- `.github/workflows/2macrossea.yml` compiles this folder on every push — it is the only
-  automated check in the repo, and it ignores warnings.
+- `.github/workflows/mql-build.yml` compiles every source in this folder on each push and PR, on
+  the self-hosted Windows runner. Warnings do not fail the build; errors do.
 - `2MA_Cross.mq5` / `PriceMA_Cross.mq5` read MA values **from the indicator's buffers**
   (`GetMA(_MA1, ...)`). If the customer did not enable MA1/MA2 on the Renko indicator, the
   EA gets empty data and silently does nothing. Both EAs' `#property description` say so.

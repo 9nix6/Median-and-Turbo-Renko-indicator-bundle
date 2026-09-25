@@ -124,30 +124,23 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
   `.gitignore`). They are the build output *and* part of what customers get. This means
   a committed `.ex5` can be stale relative to a source fix — check before telling a
   customer to just copy the file (see "Known risks" below).
-- **CI** (`.github/workflows/2macrossea.yml`) compiles the `Experts/` folder on
-  `windows-latest` via `fx31337/mql-compile-action`, warnings ignored, on push/PR to
-  `master`. It is a compile smoke test only: no tests, no artifact upload, and it does
-  **not** cover `Indicators/` or refresh the committed `.ex5` files.
+- **CI compiles everything** — `.github/workflows/mql-build.yml`, see the CI section below.
+  It does not refresh the committed `.ex5` files; it builds its own copies and attaches them
+  to a release.
 
 ## Known risks / things that looked wrong while surveying
 
 Flagged, unverified fixes — do not "fix" these as a side effect of another task.
 
-1. **`Experts/Renko_EA.ex5` is stale.** `Renko_EA.mq5` was last changed 2026-09-25
-   (commit `48dbfb6`, the SuperTrend-filter input wiring fix); the committed
-   `Renko_EA.ex5` dates from 2021-10-28. A customer who copies the `.ex5` still gets the
-   bug. Recompile before shipping.
-2. ~~`Indicators/MedianRenko/TradeHistory.mq5` includes `<AZ-INVEST/Double.mqh>` but the repo
-   ships `Include/Double.mqh`.~~ **Fixed 2026-09-26** (issue #19): no installer relocates the
-   file, and every other consumer in both this repo and `installer-builder` includes it as
-   `<Double.mqh>`, so the include was the outlier. `tools/check_includes.py` now resolves every
-   `#include <…>` in the tree and runs in CI (`mql-build.yml`, stage 1), so this class of breakage
-   cannot come back silently — see "Checks that actually run" below.
-3. **Case-sensitivity.** Sources are `#include`d as `<SmoothAlgorithms.mqh>` and
+1. **`Experts/Renko_EA.ex5` is stale.** The committed binary dates from 2021-10-28 and predates
+   the SuperTrend-filter input wiring fix in `Renko_EA.mq5`, so a customer who copies the `.ex5`
+   still gets that bug. Recompile before shipping, or hand them a release archive — those carry
+   binaries built by CI from the sources beside them.
+2. **Case-sensitivity.** Sources are `#include`d as `<SmoothAlgorithms.mqh>` and
    `<IncOnRingBuffer\CMAOnRingBuffer.mqh>` but stored lowercase
    (`Include/smoothalgorithms.mqh`, `Include/IncOnRingBuffer/cmaonringbuffer.mqh`).
    Harmless on Windows/MT5; breaks any case-sensitive tooling or checkout.
-4. **Mixed file encodings.** Several `.mqh`/`.mq5` files are UTF-16LE with BOM, the rest
+3. **Mixed file encodings.** Several `.mqh`/`.mq5` files are UTF-16LE with BOM, the rest
    ASCII. See [`Include/AGENTS.md`](Include/AGENTS.md) — grep silently misses the UTF-16
    ones, which is how "that setting doesn't exist anywhere" happens.
 
@@ -157,8 +150,9 @@ One workflow, three stages, each gating the next.
 
 **1. `Scan`** (hosted, seconds, no platform needed)
 - `gitleaks` over the full history.
-- `tools/check_includes.py` — resolves every `#include <…>` in all 96 sources against what the
-  repo ships, plus `tools/tests/`. Stdlib-only Python. It knows three things a grep does not:
+- `tools/check_includes.py` — resolves every include in all 96 sources, plus `tools/tests/`.
+  `<angled>` paths resolve against `Include/`, `"quoted"` ones beside the including file.
+  Stdlib-only Python. It knows three things a grep does not:
   **UTF-16LE sources** (29 of the 96) are decoded, so their includes are visible at all;
   **platform headers** (`Trade/`, `Generic/`, `MovingAverages.mqh`, …) come from the terminal;
   **sibling-product headers** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
@@ -175,24 +169,18 @@ One workflow, three stages, each gating the next.
   `Indicators\MedianRenko` and `Experts\*` into their counterparts. This is load-bearing:
   MetaEditor resolves `<…>` against the data folder's `Include`, so it is the only arrangement
   where `<AZ-INVEST/SDK/MedianRenko.mqh>` and `<Trade/Trade.mqh>` both resolve in one build.
-- Any previously built `.ex5` is deleted from the staging tree first, so a failed compile cannot
-  masquerade as a successful one when binaries are collected.
-- **All 7 sources under `Experts/` and all 64 under `Indicators/MedianRenko/` are compiled.** The
-  old workflow pointed at `Experts` alone.
+- Any `.ex5` already in the staging tree is deleted first, and the step throws unless the number of
+  staged sources matches the repository. Both guards exist so that an incomplete stage fails loudly
+  instead of reading as a clean compile.
+- **All 7 sources under `Experts/` and all 64 under `Indicators/MedianRenko/` are compiled.**
 - MetaEditor's exit code is its error count, and its log is UTF-16LE — both are handled; the job
   fails on either signal.
 
 **3. `Release`** — only on a tag push (`3.19.5`) or a `workflow_dispatch` carrying a version.
 - Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a
-  release always matches the `.mq5` next to it — which was not true of the committed binaries.
+  release always matches the `.mq5` next to it.
 - Release notes = the standard package description every `3.19.x` release carries, plus a
   "What's new" section from the dispatch input.
-
-### The old `EA compiler` workflow was never real
-
-It compiled nothing, ever: the hosted runner has no MetaTrader, so every run ended in
-`Platform cannot be found in "."!`. The README badge was reporting that, not the code. Removed,
-and the badge now points at `MQL Build`.
 
 ### If the compile job sits queued
 
