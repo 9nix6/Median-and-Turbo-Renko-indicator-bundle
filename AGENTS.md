@@ -136,8 +136,11 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
    the SuperTrend-filter input wiring fix in `Renko_EA.mq5`, so a customer who copies the `.ex5`
    still gets that bug. Recompile before shipping, or hand them a release archive — those carry
    binaries built by CI from the sources beside them.
-2. **`.set` files carry no version field.** A struct layout change silently desyncs a
-   mismatched indicator/EA pair rather than failing — see issue #20.
+2. **The `.set` handshake still has no version field.** `Load()` now rejects a settings file whose
+   size does not match the structs this build expects, which catches any layout change that adds,
+   removes or retypes a field. A *same-size reordering* is still undetectable — that needs a
+   version field in the file, and the writer is the closed-source indicator, so it cannot be added
+   from this repository alone. See `Include/AGENTS.md`.
 
 ## CI — `MQL Build` (`.github/workflows/mql-build.yml`)
 

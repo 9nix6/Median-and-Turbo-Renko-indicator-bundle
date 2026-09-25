@@ -153,6 +153,7 @@ class CRenkoCustomChartSettigns : public CCustomChartSettingsBase
    virtual string GetSettingsFileName();
    virtual uint CustomChartSettingsToFile(int handle);
    virtual uint CustomChartSettingsFromFile(int handle);
+   virtual uint CustomChartSettingsSize();
 };
 
 void CRenkoCustomChartSettigns::CRenkoCustomChartSettigns()
@@ -177,6 +178,11 @@ uint CRenkoCustomChartSettigns::CustomChartSettingsToFile(int file_handle)
 uint CRenkoCustomChartSettigns::CustomChartSettingsFromFile(int file_handle)
 {
    return FileReadStruct(file_handle,this.settings);
+}
+
+uint CRenkoCustomChartSettigns::CustomChartSettingsSize()
+{
+   return sizeof(this.settings);
 }
 
 void CRenkoCustomChartSettigns::SetCustomChartSettings()

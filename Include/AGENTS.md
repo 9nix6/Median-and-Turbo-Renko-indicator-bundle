@@ -142,3 +142,29 @@ is the live consumer).
 - `DEVELOPER_VERSION`, `IS_DEBUG`, `SHOW_DEBUG`, `DISPLAY_DEBUG_MSG` gate `Print()`
   diagnostics. `DEVELOPER_VERSION` also swaps `RENKO_INDICATOR_NAME` to an internal build
   (`MedianRenko\MedianRenkoOverlay319`) — it must stay commented out in anything shipped.
+
+## The `.set` settings handshake
+
+The indicator writes `MQL5/Files/<CUSTOM_CHART_NAME><ChartID>.set` — two raw structs,
+`RENKO_SETTINGS` then `CHART_INDICATOR_SETTINGS`, via `FileWriteStruct`. This SDK only ever
+*reads* it: `Save()` exists in `CustomChartSettingsBase.mqh` but nothing in this repository calls
+it. **The writer is the closed-source indicator**, which is why the file format cannot be changed
+here — a version field would have to be added on both sides in a coordinated release.
+
+`FileReadStruct` fails only on a short read. Given a file written against a different struct
+layout, it succeeds whenever enough bytes remain, and every field from the first changed offset on
+is silently reinterpreted — a `datetime` read as a `double`, a period read as an enum. The EA then
+runs on structurally valid garbage, and the customer reports "settings are wrong after updating"
+with nothing in either log pointing at the handshake.
+
+`Load()` therefore validates two things before trusting the file, and logs a specific message
+naming the mismatch when either fails:
+
+- the file's size equals `CustomChartSettingsSize() + sizeof(chartIndicatorSettings)`;
+- every byte was consumed once both structs have been read.
+
+A subclass that adds its own payload must override `CustomChartSettingsSize()` — returning 0 (the
+base default) disables the size check for that subclass rather than failing it.
+
+**What this does not catch:** a layout change that keeps the same size, such as swapping two
+`int` fields. Only a version field in the file would catch that.

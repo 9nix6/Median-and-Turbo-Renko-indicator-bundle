@@ -45,6 +45,7 @@ class CCustomChartSettingsBase : public ICustomChartSettings
       virtual void                  SetCustomChartSettings() {};
       virtual uint                  CustomChartSettingsToFile(int file_handle) {return 0;};
       virtual uint                  CustomChartSettingsFromFile(int file_handle) {return 0;};
+      virtual uint                  CustomChartSettingsSize() {return 0;};
       
 };
 
@@ -153,6 +154,34 @@ bool CCustomChartSettingsBase::Load(void)
    handle = FileOpen(this.settingsFileName,FILE_SHARE_READ|FILE_BIN);  
    if(handle == INVALID_HANDLE)
       return false;
+
+   //
+   // The settings file is two raw structs and carries no version field. The
+   // indicator writes it; this SDK reads it. If the two were built against
+   // different struct layouts, FileReadStruct still succeeds whenever enough
+   // bytes remain -- it reports a short read, never a differently-shaped one --
+   // and every field from the first changed offset on is silently reinterpreted.
+   // The EA then runs on structurally valid garbage and the customer reports
+   // "settings are wrong after updating", with nothing in either log to say why.
+   //
+   // Comparing the file's size against what this build expects catches any
+   // layout change that alters a struct's size, which is what adding, removing
+   // or retyping a field does. A same-size reordering still passes; detecting
+   // that needs a version field in the file itself, which cannot be added from
+   // this repository alone because the writer is the closed-source indicator.
+   //
+   uint expectedSize = CustomChartSettingsSize() + sizeof(this.chartIndicatorSettings);
+   ulong actualSize = FileSize(handle);
+   
+   if(expectedSize > 0 && actualSize != expectedSize)
+   {
+      PrintFormat("%s: settings file '%s' is %I64u bytes, this build expects %u. "
+                  "The indicator and the EA/SDK were built against different settings "
+                  "layouts -- update both to the same release. Ignoring the file.",
+                  __FUNCTION__, this.settingsFileName, actualSize, expectedSize);
+      FileClose(handle);
+      return false;
+   }
         
    if(CustomChartSettingsFromFile(handle) <= 0)
    {
@@ -165,6 +194,19 @@ bool CCustomChartSettingsBase::Load(void)
    {
       Print("Failed loading settings in "+__FUNCTION__+" ("+__FILE__+", line#"+(string)__LINE__+")");
       FileClose(handle); 
+      return false;
+   }
+
+   // Every byte written must have been consumed. A trailing remainder means the
+   // writer put more in the file than this build knows how to read.
+   ulong consumed = FileTell(handle);
+   if(consumed != actualSize)
+   {
+      PrintFormat("%s: settings file '%s' has %I64u trailing byte(s) after both "
+                  "structs were read. The indicator and the EA/SDK disagree on the "
+                  "settings layout -- update both to the same release. Ignoring the file.",
+                  __FUNCTION__, this.settingsFileName, actualSize - consumed);
+      FileClose(handle);
       return false;
    }
    
