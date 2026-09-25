@@ -577,7 +577,9 @@ bool CDoubleVector::Add(const double value)
 {
    CDouble *dub = new CDouble;
    dub = value;
-   return Add(dub);
+   // CArrayObj::Add(CObject*) is hidden by this class's own Add(const double),
+   // so an unqualified Add(dub) resolves back to this overload.
+   return CArrayObj::Add(dub);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -590,7 +592,7 @@ bool CDoubleVector::AssignDoubleArray(const double &arr[])
    {
       CDouble *dub = new CDouble;
       dub = arr[i];
-      if (!Add(dub))
+      if (!CArrayObj::Add(dub))
          return false;
    }
    return true;

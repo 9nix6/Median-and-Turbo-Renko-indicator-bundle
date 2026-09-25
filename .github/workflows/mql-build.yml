@@ -190,14 +190,20 @@ jobs:
               if (-not $text) { $text = Get-Content $log -Raw }
               Write-Host $text
               $errors = ([regex]::Matches($text, "(?m):\s*error\s")).Count
+              $summary = [regex]::Match($text, "result\s+(\d+)\s+errors?")
+              if ($summary.Success) { $errors = [Math]::Max($errors, [int]$summary.Groups[1].Value) }
             } else {
               Write-Host "No log produced by MetaEditor."
-              $errors = 0
+              # No log and nothing compiled is a failure, not a clean run.
+              $errors = 1
             }
             Write-Host "::endgroup::"
 
-            Write-Host "$target -- MetaEditor exit code $code, $errors error line(s) in the log"
-            if ($code -ne 0 -or $errors -gt 0) { $failed = 1 }
+            # MetaEditor's exit code is the number of files it compiled, not an
+            # error count -- a fully successful directory build exits non-zero.
+            # The log is the only signal that distinguishes success from failure.
+            Write-Host "$target -- $code file(s) compiled, $errors error(s) reported"
+            if ($errors -gt 0) { $failed = 1 }
           }
 
           $binaries = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
