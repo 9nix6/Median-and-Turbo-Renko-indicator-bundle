@@ -85,13 +85,9 @@ wrong path gets "cannot load indicator" even though the file is installed.
 
 ## Gotchas
 
-- **22 of the 64 sources are UTF-16LE with BOM** (ATP, AroonOscillator, BB_MACD,
-  BollingerBandsMacd, ColorHMA, DidiIndex, DonchianChannel, GMMA, HA_Smoothed,
-  KeltnerChannel, LRMA, `Ozymandias System Alert MT5 Indicator`, RangeDetector,
-  SchaffTrendCycle, SuperTrend, T3, TDI,
-  TradeHistory, Volatility, Volume_Average_percent, WPR, ZigZag_NK_Channel — plus any
-  added since). **Plain `grep` finds nothing in them**; pipe through
-  `iconv -f UTF-16LE -t UTF-8` first. Do not re-encode them.
+- Every source here is UTF-8 with a BOM, so plain `grep` works. Several carry non-ASCII that the
+  BOM protects (Cyrillic comments in `ATP.mq5`, `©` in various copyright headers) — if MetaEditor
+  re-saves one as UTF-16, CI fails; convert it back rather than committing it.
 - Two filenames contain spaces (`ADX Cross Alerts.mq5`,
   `Ozymandias System Alert MT5 Indicator.mq5`) and one contains parentheses
   (`CCI(alternative).mq5`) — quote paths in any script.

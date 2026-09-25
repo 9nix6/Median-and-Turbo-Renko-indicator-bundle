@@ -1,4 +1,4 @@
-#property copyright "Copyright 2018-2021, Level Up Software"
+﻿#property copyright "Copyright 2018-2021, Level Up Software"
 #property link      "https://www.az-invest.eu"
 #property description "A timescale indicator for use on the custom chart."
 #property version   "1.04"

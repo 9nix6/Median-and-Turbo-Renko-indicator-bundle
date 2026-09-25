@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------
+﻿//+------------------------------------------------------------------
 #property copyright   "mladen"
 #property link        "mladenfx@gmail.com"
 #property link        "https://www.mql5.com"

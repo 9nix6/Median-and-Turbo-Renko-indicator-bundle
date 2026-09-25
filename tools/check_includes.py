@@ -132,6 +132,46 @@ def unresolved_includes():
     return problems
 
 
+def utf16_sources():
+    """Sources saved as UTF-16, which byte-oriented search tools cannot read.
+
+    grep, git grep and GitHub code search return *no match* for text inside a
+    UTF-16 file rather than reporting that they skipped it -- a silent false
+    negative, which is worse than an error because it reads as "the repository
+    does not contain that".
+    """
+    return [
+        p.relative_to(REPO_ROOT)
+        for p in source_files()
+        if p.read_bytes()[:2] in (b"\xff\xfe", b"\xfe\xff")
+    ]
+
+
+def miscased_includes():
+    """[(source, include, on-disk spelling, line)] where only the case differs.
+
+    MQL resolves these on Windows and this checker resolves them too, but a
+    case-sensitive checkout does not -- the include simply fails there.
+    """
+    # shipped_headers() keys are normalised; the *value* carries the real
+    # on-disk spelling, which is what an include has to match.
+    by_lower = {
+        key: str(path.relative_to(INCLUDE_ROOT)).replace("\\", "/")
+        for key, path in shipped_headers().items()
+    }
+    problems = []
+    for source in source_files():
+        text = read_source(source)
+        for match in INCLUDE_RE.finditer(text):
+            include_path = match.group(1).strip()
+            actual = by_lower.get(normalise(include_path))
+            if actual is None or actual == include_path.replace("\\", "/"):
+                continue
+            line = text.count("\n", 0, match.start(1)) + 1
+            problems.append((source.relative_to(REPO_ROOT), include_path, actual, line))
+    return problems
+
+
 def unresolved_local_includes():
     """[(source, include, line)] for every `#include "..."` with no file beside it."""
     problems = []
@@ -151,10 +191,24 @@ def main():
     sources = source_files()
     problems = unresolved_includes()
     local_problems = unresolved_local_includes()
+    utf16 = utf16_sources()
+    miscased = miscased_includes()
+    failed = bool(local_problems or utf16 or miscased)
 
     for source, include_path, line in local_problems:
         print(f'{source}:{line}: #include "{include_path}" -- no such file beside it')
-    if local_problems and not problems:
+
+    for source in utf16:
+        print(f"{source}: saved as UTF-16 -- grep and GitHub code search cannot read it")
+    if utf16:
+        print("Re-save as UTF-8 with a BOM (MetaEditor reads a BOM-less file as ANSI).\n")
+
+    for source, include_path, actual, line in miscased:
+        print(f"{source}:{line}: #include <{include_path}> -- on disk it is <{actual}>")
+    if miscased:
+        print("Only the case differs, so this resolves on Windows and fails anywhere else.\n")
+
+    if failed and not problems:
         return 1
 
     if not problems:

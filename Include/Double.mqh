@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                                      CDouble.mqh |
 //|                                      Copyright 2017, nicholishen |
 //|                         https://www.forexfactory.com/nicholishen |
@@ -35,8 +35,8 @@
    #property strict
 #endif 
 
-#include <Arrays\ArrayObj.mqh>
-#include <Arrays\ArrayDouble.mqh>
+#include <Arrays/ArrayObj.mqh>
+#include <Arrays/ArrayDouble.mqh>
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

@@ -136,13 +136,8 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
    the SuperTrend-filter input wiring fix in `Renko_EA.mq5`, so a customer who copies the `.ex5`
    still gets that bug. Recompile before shipping, or hand them a release archive — those carry
    binaries built by CI from the sources beside them.
-2. **Case-sensitivity.** Sources are `#include`d as `<SmoothAlgorithms.mqh>` and
-   `<IncOnRingBuffer\CMAOnRingBuffer.mqh>` but stored lowercase
-   (`Include/smoothalgorithms.mqh`, `Include/IncOnRingBuffer/cmaonringbuffer.mqh`).
-   Harmless on Windows/MT5; breaks any case-sensitive tooling or checkout.
-3. **Mixed file encodings.** Several `.mqh`/`.mq5` files are UTF-16LE with BOM, the rest
-   ASCII. See [`Include/AGENTS.md`](Include/AGENTS.md) — grep silently misses the UTF-16
-   ones, which is how "that setting doesn't exist anywhere" happens.
+2. **`.set` files carry no version field.** A struct layout change silently desyncs a
+   mismatched indicator/EA pair rather than failing — see issue #20.
 
 ## CI — `MQL Build` (`.github/workflows/mql-build.yml`)
 
@@ -152,13 +147,31 @@ One workflow, three stages, each gating the next.
 - `gitleaks` over the full history.
 - `tools/check_includes.py` — resolves every include in all 96 sources, plus `tools/tests/`.
   `<angled>` paths resolve against `Include/`, `"quoted"` ones beside the including file.
-  Stdlib-only Python. It knows three things a grep does not:
-  **UTF-16LE sources** (29 of the 96) are decoded, so their includes are visible at all;
+  It also enforces the two invariants below — one source encoding, one spelling per include.
+  Stdlib-only Python. It knows two things a grep does not:
   **platform headers** (`Trade/`, `Generic/`, `MovingAverages.mqh`, …) come from the terminal;
   **sibling-product headers** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
   are referenced behind `#ifdef` and ship with those products. Both allowlists live at the top of
   the script — when the check fires, fix the include, and add to a list only when the header
   genuinely belongs elsewhere, with the reason.
+
+### Every source is UTF-8 with a BOM
+
+Both halves are load-bearing. **UTF-8**, because `grep`, `git grep` and GitHub code search return
+*no match* for text inside a UTF-16 file instead of reporting a skip — a silent false negative, and
+the reason a support answer can be confidently wrong ("that setting doesn't exist in this version").
+**With a BOM**, because MetaEditor reads a BOM-less file as ANSI, which mangles the Portuguese input
+labels in `CustomChartInputsBR.mqh`, the Cyrillic comments in `ATP.mq5` and the `©` in several
+copyright headers.
+
+MetaEditor may re-save a file as UTF-16 on its own; the check in stage 1 catches that.
+
+### Includes match the on-disk spelling exactly
+
+MQL on Windows is case-insensitive, so a case-only mismatch resolves there and fails on any
+case-sensitive checkout. The spelling on disk wins — it is what customers already have installed —
+so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
+`<SmoothAlgorithms.mqh>`. Paths use forward slashes.
 
 **2. `Compile (MetaEditor)`** — `runs-on: [self-hosted, Windows, mql]`
 - The Windows 11 UTM VM on the Mac Mini. MetaEditor is Windows-only, so there is nowhere else this

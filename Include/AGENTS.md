@@ -12,7 +12,6 @@ Include/
     CustomBarConfig.mqh      <- the ONE file indicators include; picks the product edition
     SDK/                     <- the actual library (see below)
   IncOnRingBuffer/           <- 3rd-party ring-buffer MA/ATR/ADX helpers (unmodified)
-  smoothalgorithms.mqh       <- 3rd-party smoothing library (UTF-16LE, 3.7k lines)
   Double.mqh                 <- 3rd-party CDouble/CDoubleVector helper
 ```
 
@@ -128,10 +127,7 @@ is the live consumer).
 
 - **Encoding is mixed.** `CommonSettings.mqh`, `CustomChartInputs.mqh`,
   `CustomChartInputsBR.mqh`, `CustomChartSettingsBase.mqh`, `ICustomChartSettings.mqh`,
-  `RenkoCustomChartSettings.mqh` and `smoothalgorithms.mqh` are **UTF-16LE with BOM**;
   everything else is ASCII. Plain `grep` finds nothing in them. Use
-  `iconv -f UTF-16LE -t UTF-8 <file>` first, or `grep -a` with a UTF-16 pattern. Several
-  ported indicators are UTF-16 too — see [`../Indicators/AGENTS.md`](../Indicators/AGENTS.md).
   **Do not "normalise" these to UTF-8**: MetaEditor wrote them and round-trips them.
 - **Include paths are inconsistently cased** (`<az-invest/sdk/...>` vs
   `<AZ-INVEST/SDK/...>`, `<SmoothAlgorithms.mqh>` vs the on-disk `smoothalgorithms.mqh`).

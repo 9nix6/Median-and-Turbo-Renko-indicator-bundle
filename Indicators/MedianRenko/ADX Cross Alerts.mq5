@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                                     ma cross.mq5 |
 //|                        Copyright 2018, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
@@ -32,8 +32,8 @@ input int    lookback         = 256;         // Maximum lookback period
 
 double crossUp[],crossDn[],cross[];
 
-#include <IncOnRingBuffer\CATROnRingBuffer.mqh>
-#include <IncOnRingBuffer\CADXOnRingBuffer.mqh>
+#include <IncOnRingBuffer/catronringbuffer.mqh>
+#include <IncOnRingBuffer/cadxonringbuffer.mqh>
 
 CATROnRingBuffer atr;
 CADXOnRingBuffer adx;

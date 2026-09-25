@@ -1,4 +1,4 @@
-// RSI on Buffer
+﻿// RSI on Buffer
 
 int RsiOnBuffer(const int rates_total,const int prev_calculated,const int begin,
                        const int period,const double& price[],double& rsiBuffer[], double &posBuffer[], double &negBuffer[])
