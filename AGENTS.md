@@ -141,7 +141,7 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
    ships `Include/Double.mqh`.~~ **Fixed 2026-09-26** (issue #19): no installer relocates the
    file, and every other consumer in both this repo and `installer-builder` includes it as
    `<Double.mqh>`, so the include was the outlier. `tools/check_includes.py` now resolves every
-   `#include <…>` in the tree and runs in CI (`static-checks.yml`), so this class of breakage
+   `#include <…>` in the tree and runs in CI (`mql-build.yml`, stage 1), so this class of breakage
    cannot come back silently — see "Checks that actually run" below.
 3. **Case-sensitivity.** Sources are `#include`d as `<SmoothAlgorithms.mqh>` and
    `<IncOnRingBuffer\CMAOnRingBuffer.mqh>` but stored lowercase
@@ -151,24 +151,54 @@ Flagged, unverified fixes — do not "fix" these as a side effect of another tas
    ASCII. See [`Include/AGENTS.md`](Include/AGENTS.md) — grep silently misses the UTF-16
    ones, which is how "that setting doesn't exist anywhere" happens.
 
-## Checks that actually run
+## CI — `MQL Build` (`.github/workflows/mql-build.yml`)
 
-The `EA compiler` workflow **compiles nothing**: the runner has no MetaTrader, so every run
-since it was added has ended in `Platform cannot be found in "."!`. Do not read a green or red
-badge there as evidence about the code.
+One workflow, three stages, each gating the next.
 
-`static-checks.yml` is what currently gates a push: `tools/check_includes.py` resolves every
-`#include <…>` in all 96 sources against what the repo ships, plus `tools/tests/`. It is
-stdlib-only Python and needs no platform. It knows three things a grep does not:
+**1. `Scan`** (hosted, seconds, no platform needed)
+- `gitleaks` over the full history.
+- `tools/check_includes.py` — resolves every `#include <…>` in all 96 sources against what the
+  repo ships, plus `tools/tests/`. Stdlib-only Python. It knows three things a grep does not:
+  **UTF-16LE sources** (29 of the 96) are decoded, so their includes are visible at all;
+  **platform headers** (`Trade/`, `Generic/`, `MovingAverages.mqh`, …) come from the terminal;
+  **sibling-product headers** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
+  are referenced behind `#ifdef` and ship with those products. Both allowlists live at the top of
+  the script — when the check fires, fix the include, and add to a list only when the header
+  genuinely belongs elsewhere, with the reason.
 
-- **UTF-16LE sources** (29 of the 96) are decoded properly, so their includes are visible at all.
-- **Platform headers** (`Trade/`, `Generic/`, `MovingAverages.mqh`, …) come from the terminal and
-  are expected to be absent here.
-- **Sibling-product headers** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
-  are referenced behind `#ifdef` and ship with those products, not this repo.
+**2. `Compile (MetaEditor)`** — `runs-on: [self-hosted, Windows, mql]`
+- The Windows 11 UTM VM on the Mac Mini. MetaEditor is Windows-only, so there is nowhere else this
+  can run; the VM already hosts the per-repo runners for the sibling repos.
+- MT5 is installed into the workspace on first run and kept, then the terminal is run once so the
+  standard includes (`Trade/`, `Arrays/`, `Generic/`) exist.
+- **The repo is staged into `mt5\MQL5\` before compiling** — `Include\*` into `MQL5\Include`,
+  `Indicators\MedianRenko` and `Experts\*` into their counterparts. This is load-bearing:
+  MetaEditor resolves `<…>` against the data folder's `Include`, so it is the only arrangement
+  where `<AZ-INVEST/SDK/MedianRenko.mqh>` and `<Trade/Trade.mqh>` both resolve in one build.
+- Any previously built `.ex5` is deleted from the staging tree first, so a failed compile cannot
+  masquerade as a successful one when binaries are collected.
+- **All 7 sources under `Experts/` and all 64 under `Indicators/MedianRenko/` are compiled.** The
+  old workflow pointed at `Experts` alone.
+- MetaEditor's exit code is its error count, and its log is UTF-16LE — both are handled; the job
+  fails on either signal.
 
-Both lists live at the top of the script. If a check fires, fix the include or the file — add to
-those lists only when the header genuinely belongs elsewhere, with the reason.
+**3. `Release`** — only on a tag push (`3.19.5`) or a `workflow_dispatch` carrying a version.
+- Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a
+  release always matches the `.mq5` next to it — which was not true of the committed binaries.
+- Release notes = the standard package description every `3.19.x` release carries, plus a
+  "What's new" section from the dispatch input.
+
+### The old `EA compiler` workflow was never real
+
+It compiled nothing, ever: the hosted runner has no MetaTrader, so every run ended in
+`Platform cannot be found in "."!`. The README badge was reporting that, not the code. Removed,
+and the badge now points at `MQL Build`.
+
+### If the compile job sits queued
+
+No runner is registered for this repo, or its labels do not include `mql`. Each repo on that VM
+needs its own runner registration (a personal account cannot share a runner group) — the sibling
+repos each have one under `C:\actions-runner-*`.
 
 ## Invariants
 

@@ -1,0 +1,305 @@
+name: MQL Build
+
+# Replaces the old "EA compiler" workflow, which pointed at Experts/ only and
+# never compiled anything: the hosted runner has no MetaTrader, so every run
+# since it was added ended in `Platform cannot be found in "."!`. The badge in
+# README.md was reporting that, not the code.
+#
+# Three stages, each gating the next:
+#   scan     — secret leaks + include paths        (hosted, seconds)
+#   compile  — every Experts/ and Indicators/ source through MetaEditor
+#              (self-hosted Windows VM on the Mac Mini — MetaEditor is
+#              Windows-only, so there is nowhere else this can run)
+#   release  — publishes a release with the freshly compiled binaries
+#              (tag push, or workflow_dispatch with a version)
+
+on:
+  push:
+    branches: [master]
+    tags: ["[0-9]+.[0-9]+*"]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Publish a release with this version (e.g. 3.19.5). Leave empty to build only."
+        type: string
+        required: false
+      release_notes:
+        description: "What changed in this version, one item per line. Appended to the standard package description."
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  # ===========================================================================
+  # Stage 1 — gates that need no platform, so they always run
+  # ===========================================================================
+  scan:
+    name: Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # gitleaks scans history, not just the tip
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # Resolves every #include <...> without a compiler. It reads UTF-16LE
+      # sources, which plain grep cannot -- see tools/check_includes.py.
+      - name: Every #include resolves
+        run: python3 tools/check_includes.py
+
+      - name: Tool tests
+        run: python3 -m unittest discover -s tools/tests -t .
+
+  # ===========================================================================
+  # Stage 2 — the real compile, on the self-hosted Windows VM
+  # ===========================================================================
+  compile:
+    name: Compile (MetaEditor)
+    needs: scan
+    runs-on: [self-hosted, Windows, mql]
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+
+      # MT5 is installed into the workspace and kept between runs, so only the
+      # first run on a fresh runner pays the download. Same approach as
+      # TradingAssistant-VTC4's mql-compile job, which already works on this VM.
+      - name: Ensure MetaTrader 5 is installed
+        run: |
+          $ErrorActionPreference = "Stop"
+          $mt5Dir = Join-Path $PWD "mt5"
+          $metaEditor = Join-Path $mt5Dir "metaeditor64.exe"
+
+          if (Test-Path $metaEditor) {
+            Write-Host "MetaEditor already present: $metaEditor"
+          } else {
+            $url = "${{ vars.MT5_INSTALLER_URL }}"
+            if (-not $url) { $url = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" }
+            Write-Host "Downloading MT5 installer from $url"
+            Invoke-WebRequest -Uri $url -OutFile "mt5setup.exe"
+
+            Write-Host "Installing to $mt5Dir"
+            $p = Start-Process -FilePath "mt5setup.exe" -ArgumentList "/auto", "/path:$mt5Dir" -PassThru -NoNewWindow
+            $p | Wait-Process -Timeout 300 -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 20
+            Remove-Item "mt5setup.exe" -Force -ErrorAction SilentlyContinue
+
+            if (-not (Test-Path $metaEditor)) {
+              throw "MetaEditor not found at $metaEditor after installation"
+            }
+          }
+
+          # Running the terminal once materialises the standard MQL5 includes
+          # (Trade/, Arrays/, Generic/, MovingAverages.mqh) this repo depends on.
+          $stdInclude = Join-Path $mt5Dir "MQL5\Include\Trade\Trade.mqh"
+          if (-not (Test-Path $stdInclude)) {
+            Write-Host "Initialising platform files..."
+            $terminal = Join-Path $mt5Dir "terminal64.exe"
+            $p = Start-Process -FilePath $terminal -ArgumentList "/portable" -PassThru -NoNewWindow
+            Start-Sleep -Seconds 45
+            if (-not $p.HasExited) { $p | Stop-Process -Force -ErrorAction SilentlyContinue }
+          }
+
+          if (Test-Path $stdInclude) {
+            Write-Host "Standard includes present."
+          } else {
+            throw "Standard MQL5 includes missing -- platform initialisation failed, so <Trade/Trade.mqh> and friends will not resolve."
+          }
+
+      # MetaEditor resolves <...> against the data folder's MQL5\Include, so the
+      # repo's own headers have to sit alongside the platform ones. Staging into
+      # the portable install (rather than compiling in place) is what makes
+      # <AZ-INVEST/SDK/...> and <Trade/Trade.mqh> resolve in the same build.
+      - name: Stage sources into the MQL5 tree
+        run: |
+          $ErrorActionPreference = "Stop"
+          $mql5 = Join-Path $PWD "mt5\MQL5"
+
+          foreach ($dir in @("Indicators\MedianRenko", "Experts")) {
+            $target = Join-Path $mql5 $dir
+            if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+          }
+
+          Copy-Item -Path "Include\*" -Destination (Join-Path $mql5 "Include") -Recurse -Force
+          Copy-Item -Path "Indicators\MedianRenko" -Destination (Join-Path $mql5 "Indicators") -Recurse -Force
+          Copy-Item -Path "Experts\*" -Destination (Join-Path $mql5 "Experts") -Recurse -Force
+
+          # Stale binaries from a previous run would make a failed compile look
+          # like a successful one when the artifacts are collected.
+          Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
+            -Recurse -Include *.ex5, *.ex4 -ErrorAction SilentlyContinue | Remove-Item -Force
+
+          $sources = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
+            -Recurse -Include *.mq5, *.mq4
+          Write-Host "Staged $($sources.Count) source file(s)."
+
+      - name: Compile Experts and Indicators
+        id: compile
+        run: |
+          $ErrorActionPreference = "Continue"
+          $mt5Dir = Join-Path $PWD "mt5"
+          $metaEditor = Join-Path $mt5Dir "metaeditor64.exe"
+          $mql5 = Join-Path $mt5Dir "MQL5"
+          $failed = 0
+
+          foreach ($target in @("Experts", "Indicators\MedianRenko")) {
+            $dir = Join-Path $mql5 $target
+            $log = Join-Path $PWD ("compile-" + ($target -replace '[\\/]', '-') + ".log")
+
+            Write-Host "::group::Compiling $target"
+            # MetaEditor's exit code is the number of errors; it also writes a
+            # UTF-16LE log, which is why it is read back with -Encoding Unicode.
+            $p = Start-Process -FilePath $metaEditor `
+              -ArgumentList "/compile:`"$dir`"", "/inc:`"$mql5`"", "/log:`"$log`"" `
+              -PassThru -NoNewWindow -Wait
+            $code = $p.ExitCode
+
+            if (Test-Path $log) {
+              $text = Get-Content $log -Encoding Unicode -Raw
+              if (-not $text) { $text = Get-Content $log -Raw }
+              Write-Host $text
+              $errors = ([regex]::Matches($text, "(?m):\s*error\s")).Count
+            } else {
+              Write-Host "No log produced by MetaEditor."
+              $errors = 0
+            }
+            Write-Host "::endgroup::"
+
+            Write-Host "$target -- MetaEditor exit code $code, $errors error line(s) in the log"
+            if ($code -ne 0 -or $errors -gt 0) { $failed = 1 }
+          }
+
+          $binaries = Get-ChildItem -Path $mql5 -Recurse -Include *.ex5 -ErrorAction SilentlyContinue
+          Write-Host "Produced $($binaries.Count) binary file(s)."
+          "binaries=$($binaries.Count)" >> $env:GITHUB_OUTPUT
+
+          if ($failed -ne 0) {
+            Write-Error "Compilation reported errors -- see the logs above."
+            exit 1
+          }
+
+      - name: Collect compiled binaries
+        if: success()
+        run: |
+          $ErrorActionPreference = "Stop"
+          $mql5 = Join-Path $PWD "mt5\MQL5"
+          $out = Join-Path $PWD "compiled"
+          New-Item -ItemType Directory -Path "$out\Experts", "$out\Indicators\MedianRenko" -Force | Out-Null
+
+          Get-ChildItem -Path (Join-Path $mql5 "Experts") -Filter *.ex5 -Recurse |
+            Copy-Item -Destination "$out\Experts" -Force
+          Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko") -Filter *.ex5 -Recurse |
+            Copy-Item -Destination "$out\Indicators\MedianRenko" -Force
+
+          Get-ChildItem $out -Recurse -File | Select-Object FullName, Length
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compiled-binaries
+          path: compiled/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compile-logs
+          path: compile-*.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ===========================================================================
+  # Stage 3 — release, only from a tag or an explicit dispatch
+  # ===========================================================================
+  release:
+    name: Release
+    needs: compile
+    if: startsWith(github.ref, 'refs/tags/') || inputs.release_version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: compiled-binaries
+          path: compiled
+
+      - name: Assemble the package
+        id: package
+        env:
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME}"
+          else
+            version="${{ inputs.release_version }}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # The compiled binaries ride alongside the sources, so a customer gets
+          # a package whose .ex5 files match the .mq5 files beside them -- the
+          # thing that was not true of the committed binaries (issue #18).
+          mkdir -p package
+          cp -R Include Indicators Experts README.md LICENSE package/
+          find package -name '*.ex5' -delete
+          cp -R compiled/. package/
+          (cd package && zip -qr "../MedianRenko-SDK-$version.zip" .)
+          ls -l "MedianRenko-SDK-$version.zip"
+
+          # Release body: the standard package description every 3.19.x release
+          # has carried, plus this version's changes.
+          {
+            echo "This package includes the latest set of SDK header files designed to help developers build EAs and Indicators that can work directly on the Renko charts."
+            echo
+            echo "The Indicators folder contains several example Indicators (ADX, Fractals, RSI, CCI, Momentum, MACD, Stochastic, MA, VWAP, and more) that have been patched to work directly on the Renko charts and use the Renko OLHC values for calculations."
+            echo
+            echo "The Experts folder contains three EA examples that document the use of the MedianRenko class to access various values from the renko indicator."
+            echo
+            echo "Additionally, the folder contains 3 working EAs (Renko EA, 2MA_Cross & PriceMA_Cross) that can be freely used by the owners of the Median & Turbo Renko Indicator Bundle from the MQL5 Market."
+            echo
+            echo "## What's new in $version"
+            echo
+            if [ -n "${RELEASE_NOTES:-}" ]; then
+              printf '%s\n' "$RELEASE_NOTES" | sed '/^$/d;s/^/- /;s/^- - /- /'
+            else
+              echo "- See the commit history for this tag."
+            fi
+            echo
+            echo "## Build"
+            echo
+            echo "Every source under \`Experts/\` and \`Indicators/MedianRenko/\` was compiled by MetaEditor in CI for this release, and the attached archive ships those binaries next to their sources."
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.package.outputs.version }}"
+          gh release create "$version" \
+            --title "Median Renko EA for renko indicator version 3.19+" \
+            --notes-file release-notes.md \
+            --target "${GITHUB_SHA}" \
+            "MedianRenko-SDK-$version.zip"
