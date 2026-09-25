@@ -133,8 +133,8 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
 
 ## Known risk
 
-**The `.set` handshake has no version field.** `Load()` now rejects a settings file whose
-`Load()` rejects a settings file whose size does not match the structs this build expects, which
+**The `.set` handshake has no version field.** `Load()` rejects a settings file whose size does
+not match the structs this build expects, which
 catches any layout change that adds, removes or retypes a field. A *same-size reordering* is still
 undetectable — that needs a version field in the file, and the writer is the closed-source
 indicator, so it cannot be added from this repository alone. See `Include/AGENTS.md`.
