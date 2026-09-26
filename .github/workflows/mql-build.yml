@@ -267,7 +267,10 @@ jobs:
           name: compiled-binaries
           path: compiled/
           if-no-files-found: warn
-          retention-days: 14
+          # The release job consumes this within the same run, so it only has to
+          # outlive the run itself. An explicit value here overrides the
+          # repository default, so both have to be set to keep storage down.
+          retention-days: 1
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -275,7 +278,7 @@ jobs:
           name: compile-logs
           path: compile-*.log
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 1
 
   # ===========================================================================
   # Stage 3 — release, only from a tag or an explicit dispatch
