@@ -248,9 +248,9 @@ jobs:
             Copy-Item -Path $config -Destination "$out\$name\CustomBarConfig.mqh" -Force
 
             $built = (Get-ChildItem -Path "$out\$name" -Recurse -Include *.ex5).Count
-            Write-Host "$name: produced $built binary file(s)."
+            Write-Host "${name}: produced $built binary file(s)."
             if ($built -ne $expected) {
-              throw "$name: $built binaries for $expected sources."
+              throw "${name}: $built binaries for $expected sources."
             }
           }
 
