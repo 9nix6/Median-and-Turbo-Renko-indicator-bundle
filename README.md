@@ -26,9 +26,13 @@ no need to duplicate the indicator's configuration in the EA's own inputs.
 
 ## Installation
 
-Copy the `Include`, `Indicators` and `Experts` folders into the **`MQL5`** sub-folder of your
-MetaTrader data folder (*File → Open Data Folder* in the terminal), merging them with what is
-already there. Restart MetaEditor, then compile.
+Download the archive from the [latest release](../../releases/latest) — it carries the sources
+*and* the compiled binaries. Copy the `Include`, `Indicators` and `Experts` folders into the
+**`MQL5`** sub-folder of your MetaTrader data folder (*File → Open Data Folder* in the terminal),
+merging them with what is already there, then restart MetaTrader.
+
+Cloning the repository instead gives you the sources without binaries; compile them in MetaEditor
+(**F7**) after copying.
 
 [![Installing the renko SDK](https://img.youtube.com/vi/cKZKoUMrMQE/0.jpg)](http://www.youtube.com/watch?v=cKZKoUMrMQE)
 
@@ -89,10 +93,13 @@ pattern applies to any standard MT5 indicator.
 MetaEditor compiles the sources: press **F7**, or run `metaeditor64.exe /compile:<path>` headless.
 There is no macOS or Linux MQL5 compiler.
 
-Continuous integration compiles every source in `Experts/` and `Indicators/MedianRenko/` on each
-push and pull request, and attaches freshly compiled binaries to every release. The `.ex5` files
-committed alongside the sources are not rebuilt by CI and may lag them — recompile, or take the
-binaries from a [release](../../releases).
+**This repository contains sources only.** Compiled `.ex5` files are not committed — continuous
+integration compiles every source in `Experts/` and `Indicators/MedianRenko/` on each push and pull
+request, failing on any error or warning, and attaches the binaries to each
+[release](../../releases). A release archive's binaries are therefore always built from exactly the
+sources beside them.
+
+So: compile locally with MetaEditor, or download a release if you would rather not.
 
 ## Getting the indicator
 

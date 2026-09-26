@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Build output. Binaries are produced by CI and attached to releases --
+# committing them is what let a 2021 .ex5 ship for five years (issue #18).
+*.ex4
+*.ex5
