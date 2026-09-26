@@ -340,7 +340,18 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ steps.package.outputs.version }}"
-          gh release create "$version" \
+
+          # A version carrying a pre-release suffix must be published as one, or
+          # GitHub makes it "Latest" and every customer visiting /releases sees a
+          # release candidate above the last stable version -- and
+          # /releases/latest resolves to it.
+          prerelease=""
+          case "$version" in
+            *-*) prerelease="--prerelease" ;;
+          esac
+          echo "Publishing $version ${prerelease:-as a full release}"
+
+          gh release create "$version" $prerelease \
             --title "Median Renko EA for renko indicator version 3.19+" \
             --notes-file release-notes.md \
             --target "${GITHUB_SHA}" \
