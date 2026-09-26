@@ -289,13 +289,23 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-          # The compiled binaries ride alongside the sources, so a customer gets
-          # a package whose .ex5 files match the .mq5 files beside them -- the
-          # thing that was not true of the committed binaries (issue #18).
+          # The repository holds sources only; the binaries come from this run's
+          # compile job. So the .ex5 in a release archive always match the .mq5
+          # beside them -- they were built from exactly these sources, minutes
+          # ago, by a job that fails on any error or warning.
           mkdir -p package
           cp -R Include Indicators Experts README.md LICENSE package/
-          find package -name '*.ex5' -delete
           cp -R compiled/. package/
+
+          # A release whose archive carries no binaries would look fine and be
+          # useless, so check rather than assume.
+          binaries=$(find package -name '*.ex5' | wc -l)
+          echo "Packaged $binaries compiled binaries."
+          if [ "$binaries" -eq 0 ]; then
+            echo "::error::No .ex5 in the package -- the compile artifact did not arrive."
+            exit 1
+          fi
+
           (cd package && zip -qr "../MedianRenko-SDK-$version.zip" .)
           ls -l "MedianRenko-SDK-$version.zip"
 

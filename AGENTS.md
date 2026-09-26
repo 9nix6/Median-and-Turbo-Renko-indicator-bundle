@@ -120,27 +120,20 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
   `Include/`, `Indicators/` mirror `MQL5/Experts`, `MQL5/Include`, `MQL5/Indicators`
   one-to-one — the install step is literally "copy these three folders into `MQL5/`"
   (as `README.md` says). A file compiled outside that layout will fail on `#include`.
-- **`.ex5` artifacts sit next to their `.mq5` and are committed to git** (70 of them, no
-  `.gitignore`). They are the build output *and* part of what customers get. This means
-  a committed `.ex5` can be stale relative to a source fix — check before telling a
-  customer to just copy the file (see "Known risks" below).
+- **The repository holds sources only.** `.ex5`/`.ex4` are gitignored and no binary is committed.
+  Compiled binaries are produced by CI and attached to each release, so the ones a customer gets
+  were built from exactly the sources beside them. Committing binaries is what let a 2021
+  `Renko_EA.ex5` ship for five years after its source was fixed.
 - **CI compiles everything** — `.github/workflows/mql-build.yml`, see the CI section below.
-  It does not refresh the committed `.ex5` files; it builds its own copies and attaches them
-  to a release.
+  It is also the only supported source of binaries.
 
-## Known risks / things that looked wrong while surveying
+## Known risk
 
-Flagged, unverified fixes — do not "fix" these as a side effect of another task.
-
-1. **`Experts/Renko_EA.ex5` is stale.** The committed binary dates from 2021-10-28 and predates
-   the SuperTrend-filter input wiring fix in `Renko_EA.mq5`, so a customer who copies the `.ex5`
-   still gets that bug. Recompile before shipping, or hand them a release archive — those carry
-   binaries built by CI from the sources beside them.
-2. **The `.set` handshake still has no version field.** `Load()` now rejects a settings file whose
-   size does not match the structs this build expects, which catches any layout change that adds,
-   removes or retypes a field. A *same-size reordering* is still undetectable — that needs a
-   version field in the file, and the writer is the closed-source indicator, so it cannot be added
-   from this repository alone. See `Include/AGENTS.md`.
+**The `.set` handshake has no version field.** `Load()` rejects a settings file whose
+a settings file whose size does not match the structs this build expects, which catches any layout
+change that adds, removes or retypes a field. A *same-size reordering* is still undetectable — that
+needs a version field in the file, and the writer is the closed-source indicator, so it cannot be
+added from this repository alone. See `Include/AGENTS.md`.
 
 ## CI — `MQL Build` (`.github/workflows/mql-build.yml`)
 
@@ -199,7 +192,8 @@ so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
 
 **3. `Release`** — only on a tag push (`3.19.5`) or a `workflow_dispatch` carrying a version.
 - Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a
-  release always matches the `.mq5` next to it.
+  release always matches the `.mq5` next to it — and fails rather than publishing an archive with
+  no binaries in it.
 - Release notes = the standard package description every `3.19.x` release carries, plus a
   "What's new" section from the dispatch input.
 

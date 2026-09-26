@@ -91,8 +91,7 @@ wrong path gets "cannot load indicator" even though the file is installed.
 - Two filenames contain spaces (`ADX Cross Alerts.mq5`,
   `Ozymandias System Alert MT5 Indicator.mq5`) and one contains parentheses
   (`CCI(alternative).mq5`) — quote paths in any script.
-- CI compiles every `.mq5` here, but it builds into its own workspace — **the committed `.ex5` in
-  this folder are never rewritten**, so assume one may lag its `.mq5`. The binaries attached to a
-  release are the freshly built ones.
+- No binaries are committed here; `.ex5` is gitignored. CI compiles every `.mq5` in this folder and
+  attaches the results to a release, so a release archive's binaries always match its sources.
 - These are third-party sources under several licences. Carrying a fix upstream, or
   relicensing, is not automatic — check each file's own header.
