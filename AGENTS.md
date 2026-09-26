@@ -191,6 +191,9 @@ so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
   stops being read, and the warning that matters arrives invisible among the rest.
 
 **3. `Release`** — only on a tag push (`3.19.5`) or a `workflow_dispatch` carrying a version.
+- A version containing a hyphen (`3.19.5-rc1`) publishes as a **pre-release**, so it does not become
+  "Latest" and `/releases/latest` keeps resolving to the last stable version. Plain `3.19.5`
+  publishes as a full release.
 - Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a
   release always matches the `.mq5` next to it — and fails rather than publishing an archive with
   no binaries in it.
