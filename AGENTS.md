@@ -181,7 +181,10 @@ so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
 - Any `.ex5` already in the staging tree is deleted first, and the step throws unless the number of
   staged sources matches the repository. Both guards exist so that an incomplete stage fails loudly
   instead of reading as a clean compile.
-- **All 7 sources under `Experts/` and all 64 under `Indicators/MedianRenko/` are compiled.**
+- **Every source is compiled twice, once per MT5 edition.** The two editions differ only in
+  `MQL5_MARKET_VERSION` in `CustomBarConfig.mqh`, which decides the indicator name `iCustom()` asks
+  for. The step rewrites that define, compiles, collects the binaries *and the config they were
+  built from*, then restores the file. Both editions must be clean for the job to pass.
 - MetaEditor's exit code is the **number of files it compiled**, not an error count — a clean
   directory build exits non-zero. The UTF-16LE log is the authoritative signal, and the job fails
   on any error *or any warning*.
@@ -194,9 +197,12 @@ so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
 - A version containing a hyphen (`3.19.5-rc1`) publishes as a **pre-release**, so it does not become
   "Latest" and `/releases/latest` keeps resolving to the last stable version. Plain `3.19.5`
   publishes as a full release.
-- Packages the sources with the **freshly compiled** binaries beside them, so the `.ex5` in a
-  release always matches the `.mq5` next to it — and fails rather than publishing an archive with
-  no binaries in it.
+- Publishes **two archives**, `…-MQL5-Market.zip` and `…-UltimateRenko.zip`. Same sources, same 70
+  programs; each carries the binaries for its edition and the `CustomBarConfig.mqh` those binaries
+  were compiled from, so a customer can use the `.ex5` as shipped or recompile and get the same
+  result without knowing the define exists.
+- Refuses to publish an archive that contains no binaries, or whose packaged config does not match
+  the edition it claims. Neither is recoverable once published.
 - Release notes = the standard package description every `3.19.x` release carries, plus a
   "What's new" section from the dispatch input.
 

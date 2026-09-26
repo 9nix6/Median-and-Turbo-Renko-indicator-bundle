@@ -127,120 +127,139 @@ jobs:
       # repo's own headers have to sit alongside the platform ones. Staging into
       # the portable install (rather than compiling in place) is what makes
       # <AZ-INVEST/SDK/...> and <Trade/Trade.mqh> resolve in the same build.
-      - name: Stage sources into the MQL5 tree
-        run: |
-          $ErrorActionPreference = "Stop"
-          $mql5 = Join-Path $PWD "mt5\MQL5"
-
-          # Copy-Item with a wildcard source and a destination that does not
-          # exist creates a FILE named after the destination instead of a
-          # directory. That silently staged zero Experts on the first run, and
-          # MetaEditor then reported `unsupported file extension` against the
-          # stray file -- so each destination is created explicitly first.
-          foreach ($dir in @("Indicators\MedianRenko", "Experts")) {
-            $target = Join-Path $mql5 $dir
-            if (Test-Path $target) { Remove-Item $target -Recurse -Force }
-            New-Item -ItemType Directory -Path $target -Force | Out-Null
-          }
-
-          Copy-Item -Path "Include\*"   -Destination (Join-Path $mql5 "Include") -Recurse -Force
-          Copy-Item -Path "Indicators\MedianRenko\*" -Destination (Join-Path $mql5 "Indicators\MedianRenko") -Recurse -Force
-          Copy-Item -Path "Experts\*"   -Destination (Join-Path $mql5 "Experts") -Recurse -Force
-
-          # Stale binaries from a previous run would make a failed compile look
-          # like a successful one when the artifacts are collected.
-          Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
-            -Recurse -Include *.ex5, *.ex4 -ErrorAction SilentlyContinue | Remove-Item -Force
-
-          # Count what the repo has against what was staged. Without this, a
-          # staging mistake reads as "everything compiled" -- which is exactly
-          # how the first run reported success for Experts while compiling none
-          # of them.
-          $expected = (Get-ChildItem -Path "Indicators\MedianRenko", "Experts" -Recurse -Include *.mq5, *.mq4).Count
-          $sources = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
-            -Recurse -Include *.mq5, *.mq4
-          Write-Host "Staged $($sources.Count) of $expected source file(s)."
-          if ($sources.Count -ne $expected) {
-            throw "Staging is incomplete: $($sources.Count) staged, $expected in the repository."
-          }
-
-      - name: Compile Experts and Indicators
+      # Both MT5 editions of the engine are the same code; they differ only in
+      # the indicator name iCustom() asks for, chosen by MQL5_MARKET_VERSION in
+      # CustomBarConfig.mqh. Each edition is therefore compiled separately, and
+      # each release ships the sources with the define already set to match its
+      # own binaries -- so a customer who recompiles gets what was shipped.
+      - name: Compile both editions
         id: compile
         run: |
-          $ErrorActionPreference = "Continue"
-          $mt5Dir = Join-Path $PWD "mt5"
+          $ErrorActionPreference = "Stop"
+          $mt5Dir  = Join-Path $PWD "mt5"
           $metaEditor = Join-Path $mt5Dir "metaeditor64.exe"
-          $mql5 = Join-Path $mt5Dir "MQL5"
+          $mql5    = Join-Path $mt5Dir "MQL5"
+          $out     = Join-Path $PWD "compiled"
+          $config  = "Include\AZ-INVEST\CustomBarConfig.mqh"
+          $pristine = Get-Content $config -Raw
           $failed = 0
 
-          foreach ($target in @("Experts", "Indicators\MedianRenko")) {
-            $dir = Join-Path $mql5 $target
-            $log = Join-Path $PWD ("compile-" + ($target -replace '[\\/]', '-') + ".log")
+          $editions = @(
+            @{ Name = "market";   Market = $true  },
+            @{ Name = "ultimate"; Market = $false }
+          )
 
-            Write-Host "::group::Compiling $target"
-            # MetaEditor's exit code is the number of errors; it also writes a
-            # UTF-16LE log, which is why it is read back with -Encoding Unicode.
-            $p = Start-Process -FilePath $metaEditor `
-              -ArgumentList "/compile:`"$dir`"", "/inc:`"$mql5`"", "/log:`"$log`"" `
-              -PassThru -NoNewWindow -Wait
-            $code = $p.ExitCode
+          foreach ($edition in $editions) {
+            $name = $edition.Name
+            Write-Host "================ edition: $name ================"
 
-            if (Test-Path $log) {
-              $text = Get-Content $log -Encoding Unicode -Raw
-              if (-not $text) { $text = Get-Content $log -Raw }
-              Write-Host $text
-              $errors = ([regex]::Matches($text, "(?m):\s*error\s")).Count
-              $warnings = ([regex]::Matches($text, "(?m):\s*warning\s")).Count
-              $summary = [regex]::Match($text, "result\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?")
-              if ($summary.Success) {
-                $errors = [Math]::Max($errors, [int]$summary.Groups[1].Value)
-                $warnings = [Math]::Max($warnings, [int]$summary.Groups[2].Value)
-              }
+            # Rewrite the define, then compile from that. `-Raw` + a literal
+            # replace keeps the file's BOM and CRLF intact, which the encoding
+            # check in stage 1 requires.
+            if ($edition.Market) {
+              $text = $pristine -replace '(?m)^//#define MQL5_MARKET_VERSION', '#define MQL5_MARKET_VERSION'
             } else {
-              Write-Host "No log produced by MetaEditor."
-              # No log and nothing compiled is a failure, not a clean run.
-              $errors = 1
-              $warnings = 0
+              $text = $pristine -replace '(?m)^#define MQL5_MARKET_VERSION', '//#define MQL5_MARKET_VERSION'
             }
-            Write-Host "::endgroup::"
+            Set-Content -Path $config -Value $text -NoNewline
+            $active = if ($edition.Market) { "#define MQL5_MARKET_VERSION" } else { "//#define MQL5_MARKET_VERSION" }
+            if (-not (Select-String -Path $config -SimpleMatch $active -Quiet)) {
+              throw "Could not set the $name edition define in $config"
+            }
+            Write-Host "CustomBarConfig.mqh: $active"
 
-            # MetaEditor's exit code is the number of files it compiled, not an
-            # error count -- a fully successful directory build exits non-zero.
-            # The log is the only signal that distinguishes success from failure.
-            Write-Host "$target -- $code file(s) compiled, $errors error(s), $warnings warning(s)"
+            # --- stage -------------------------------------------------------
+            # Copy-Item with a wildcard source and a destination that does not
+            # exist creates a FILE named after the destination instead of a
+            # directory. That silently staged zero Experts on the first run, so
+            # each destination is created explicitly first.
+            foreach ($dir in @("Indicators\MedianRenko", "Experts")) {
+              $target = Join-Path $mql5 $dir
+              if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+              New-Item -ItemType Directory -Path $target -Force | Out-Null
+            }
 
-            # Warnings fail the build too. A warning here is the compiler naming
-            # something it had to guess at -- a deprecated symbol, a non-boolean
-            # condition, a header local shadowing a consumer's global. Left to
-            # accumulate they stop being read at all, and the one that matters
-            # arrives invisible among them.
-            if ($errors -gt 0 -or $warnings -gt 0) { $failed = 1 }
+            Copy-Item -Path "Include\*" -Destination (Join-Path $mql5 "Include") -Recurse -Force
+            Copy-Item -Path "Indicators\MedianRenko\*" -Destination (Join-Path $mql5 "Indicators\MedianRenko") -Recurse -Force
+            Copy-Item -Path "Experts\*" -Destination (Join-Path $mql5 "Experts") -Recurse -Force
+
+            # A binary left from the previous edition would be collected as if
+            # this edition had produced it.
+            Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
+              -Recurse -Include *.ex5, *.ex4 -ErrorAction SilentlyContinue | Remove-Item -Force
+
+            $expected = (Get-ChildItem -Path "Indicators\MedianRenko", "Experts" -Recurse -Include *.mq5, *.mq4).Count
+            $staged = (Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
+              -Recurse -Include *.mq5, *.mq4).Count
+            Write-Host "Staged $staged of $expected source file(s)."
+            if ($staged -ne $expected) {
+              throw "Staging is incomplete: $staged staged, $expected in the repository."
+            }
+
+            # --- compile -----------------------------------------------------
+            foreach ($target in @("Experts", "Indicators\MedianRenko")) {
+              $dir = Join-Path $mql5 $target
+              $log = Join-Path $PWD ("compile-$name-" + ($target -replace '[\\/]', '-') + ".log")
+
+              Write-Host "::group::$name / $target"
+              $p = Start-Process -FilePath $metaEditor `
+                -ArgumentList "/compile:`"$dir`"", "/inc:`"$mql5`"", "/log:`"$log`"" `
+                -PassThru -NoNewWindow -Wait
+              $code = $p.ExitCode
+
+              if (Test-Path $log) {
+                $text = Get-Content $log -Encoding Unicode -Raw
+                if (-not $text) { $text = Get-Content $log -Raw }
+                Write-Host $text
+                $errors = ([regex]::Matches($text, "(?m):\s*error\s")).Count
+                $warnings = ([regex]::Matches($text, "(?m):\s*warning\s")).Count
+                $summary = [regex]::Match($text, "result\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?")
+                if ($summary.Success) {
+                  $errors = [Math]::Max($errors, [int]$summary.Groups[1].Value)
+                  $warnings = [Math]::Max($warnings, [int]$summary.Groups[2].Value)
+                }
+              } else {
+                Write-Host "No log produced by MetaEditor."
+                $errors = 1
+                $warnings = 0
+              }
+              Write-Host "::endgroup::"
+
+              # MetaEditor's exit code is the number of files it compiled, not
+              # an error count -- a successful directory build exits non-zero.
+              Write-Host "$name / $target -- $code file(s) compiled, $errors error(s), $warnings warning(s)"
+
+              # Warnings fail the build too. A warning is the compiler naming
+              # something it had to guess at. Left to accumulate they stop being
+              # read, and the one that matters arrives invisible among them.
+              if ($errors -gt 0 -or $warnings -gt 0) { $failed = 1 }
+            }
+
+            # --- collect -----------------------------------------------------
+            New-Item -ItemType Directory -Path "$out\$name\Experts", "$out\$name\Indicators\MedianRenko" -Force | Out-Null
+            Get-ChildItem -Path (Join-Path $mql5 "Experts") -Filter *.ex5 -Recurse |
+              Copy-Item -Destination "$out\$name\Experts" -Force
+            Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko") -Filter *.ex5 -Recurse |
+              Copy-Item -Destination "$out\$name\Indicators\MedianRenko" -Force
+
+            # The packaging step takes each edition's sources from here, so the
+            # CustomBarConfig.mqh in a release archive is the one its binaries
+            # were built from rather than a copy edited again later.
+            Copy-Item -Path $config -Destination "$out\$name\CustomBarConfig.mqh" -Force
+
+            $built = (Get-ChildItem -Path "$out\$name" -Recurse -Include *.ex5).Count
+            Write-Host "${name}: produced $built binary file(s)."
+            if ($built -ne $expected) {
+              throw "${name}: $built binaries for $expected sources."
+            }
           }
 
-          $binaries = Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
-            -Recurse -Include *.ex5 -ErrorAction SilentlyContinue
-          Write-Host "Produced $($binaries.Count) binary file(s) from this repository's sources."
-          "binaries=$($binaries.Count)" >> $env:GITHUB_OUTPUT
+          Set-Content -Path $config -Value $pristine -NoNewline
 
           if ($failed -ne 0) {
             Write-Error "Compilation reported errors or warnings -- see the logs above."
             exit 1
           }
-
-      - name: Collect compiled binaries
-        if: success()
-        run: |
-          $ErrorActionPreference = "Stop"
-          $mql5 = Join-Path $PWD "mt5\MQL5"
-          $out = Join-Path $PWD "compiled"
-          New-Item -ItemType Directory -Path "$out\Experts", "$out\Indicators\MedianRenko" -Force | Out-Null
-
-          Get-ChildItem -Path (Join-Path $mql5 "Experts") -Filter *.ex5 -Recurse |
-            Copy-Item -Destination "$out\Experts" -Force
-          Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko") -Filter *.ex5 -Recurse |
-            Copy-Item -Destination "$out\Indicators\MedianRenko" -Force
-
-          Get-ChildItem $out -Recurse -File | Select-Object FullName, Length
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -248,7 +267,10 @@ jobs:
           name: compiled-binaries
           path: compiled/
           if-no-files-found: warn
-          retention-days: 14
+          # The release job consumes this within the same run, so it only has to
+          # outlive the run itself. An explicit value here overrides the
+          # repository default, so both have to be set to keep storage down.
+          retention-days: 1
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -256,7 +278,7 @@ jobs:
           name: compile-logs
           path: compile-*.log
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 1
 
   # ===========================================================================
   # Stage 3 — release, only from a tag or an explicit dispatch
@@ -289,25 +311,49 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-          # The repository holds sources only; the binaries come from this run's
-          # compile job. So the .ex5 in a release archive always match the .mq5
-          # beside them -- they were built from exactly these sources, minutes
-          # ago, by a job that fails on any error or warning.
-          mkdir -p package
-          cp -R Include Indicators Experts README.md LICENSE package/
-          cp -R compiled/. package/
+          # One archive per edition. The repository holds sources only; each
+          # edition's binaries come from this run's compile job, together with
+          # the CustomBarConfig.mqh they were built from -- so a customer can
+          # use the .ex5 as shipped *or* recompile and get the same thing,
+          # without having to know about the define at all.
+          package_edition () {
+            local edition="$1" label="$2"
+            local dir="package-$edition"
+            local zip="MedianRenko-SDK-$version-$label.zip"
 
-          # A release whose archive carries no binaries would look fine and be
-          # useless, so check rather than assume.
-          binaries=$(find package -name '*.ex5' | wc -l)
-          echo "Packaged $binaries compiled binaries."
-          if [ "$binaries" -eq 0 ]; then
-            echo "::error::No .ex5 in the package -- the compile artifact did not arrive."
-            exit 1
-          fi
+            rm -rf "$dir"; mkdir -p "$dir"
+            cp -R Include Indicators Experts README.md LICENSE "$dir/"
 
-          (cd package && zip -qr "../MedianRenko-SDK-$version.zip" .)
-          ls -l "MedianRenko-SDK-$version.zip"
+            # The define as compiled, not as committed.
+            cp "compiled/$edition/CustomBarConfig.mqh" "$dir/Include/AZ-INVEST/CustomBarConfig.mqh"
+            cp -R "compiled/$edition/Experts/." "$dir/Experts/"
+            cp -R "compiled/$edition/Indicators/MedianRenko/." "$dir/Indicators/MedianRenko/"
+
+            # An archive with no binaries, or whose config does not match the
+            # edition it claims, would look fine and mislead whoever downloads
+            # it. Both are cheap to check and neither is recoverable after
+            # publishing.
+            local count
+            count=$(find "$dir" -name '*.ex5' | wc -l)
+            if [ "$count" -eq 0 ]; then
+              echo "::error::$label: no .ex5 in the package -- the compile artifact did not arrive."
+              exit 1
+            fi
+            if [ "$edition" = "market" ]; then
+              grep -q '^#define MQL5_MARKET_VERSION' "$dir/Include/AZ-INVEST/CustomBarConfig.mqh" \
+                || { echo "::error::$label: MQL5_MARKET_VERSION is not enabled in the packaged config."; exit 1; }
+            else
+              grep -q '^//#define MQL5_MARKET_VERSION' "$dir/Include/AZ-INVEST/CustomBarConfig.mqh" \
+                || { echo "::error::$label: MQL5_MARKET_VERSION is not disabled in the packaged config."; exit 1; }
+            fi
+
+            (cd "$dir" && zip -qr "../$zip" .)
+            echo "$label: $count binaries -> $zip"
+            ls -l "$zip"
+          }
+
+          package_edition market   "MQL5-Market"
+          package_edition ultimate "UltimateRenko"
 
           # Release body: the standard package description every 3.19.x release
           # has carried, plus this version's changes.
@@ -328,9 +374,22 @@ jobs:
               echo "- See the commit history for this tag."
             fi
             echo
+            echo "## Which download do I need?"
+            echo
+            echo "Both archives contain the same sources and the same 70 compiled programs. They differ only in which edition of the Renko indicator they are built for, so pick the one matching what you bought:"
+            echo
+            echo "| Archive | For |"
+            echo "|---|---|"
+            echo "| \`MedianRenko-SDK-$version-MQL5-Market.zip\` | **Median and Turbo Renko indicator bundle**, bought from the MQL5 Market |"
+            echo "| \`MedianRenko-SDK-$version-UltimateRenko.zip\` | **Ultimate Renko**, bought from az-invest.eu |"
+            echo
+            echo "Copy the \`Include\`, \`Indicators\` and \`Experts\` folders into the \`MQL5\` folder of your MetaTrader data folder. The binaries work as they are -- no compiling needed."
+            echo
+            echo "If the EA or an indicator loads but shows nothing, it is usually the wrong archive: the two editions install the indicator under different names, and the SDK has to ask for the right one."
+            echo
             echo "## Build"
             echo
-            echo "Every source under \`Experts/\` and \`Indicators/MedianRenko/\` was compiled by MetaEditor in CI for this release, and the attached archive ships those binaries next to their sources."
+            echo "Every source under \`Experts/\` and \`Indicators/MedianRenko/\` was compiled by MetaEditor in CI for this release, once per edition, with any error or warning failing the build. Each archive ships the \`CustomBarConfig.mqh\` its own binaries were compiled from, so recompiling gives you what was shipped."
           } > release-notes.md
           cat release-notes.md
 
@@ -355,4 +414,5 @@ jobs:
             --title "Median Renko EA for renko indicator version 3.19+" \
             --notes-file release-notes.md \
             --target "${GITHUB_SHA}" \
-            "MedianRenko-SDK-$version.zip"
+            "MedianRenko-SDK-$version-MQL5-Market.zip" \
+            "MedianRenko-SDK-$version-UltimateRenko.zip"
