@@ -146,7 +146,8 @@ So: compile locally with MetaEditor, or download a release if you would rather n
 
 | Platform | Product | Where |
 |---|---|---|
-| MetaTrader 5 | Median and Turbo Renko indicator bundle | [MQL5 Market](https://www.mql5.com/en/market/product/16347) |
+| MetaTrader 5 | Median and Turbo Renko indicator bundle | MQL5 Market |
+| MetaTrader 5 | [P-Renko BR](https://www.az-invest.eu/p-renko-br-for-metatrader-5) | az-invest.eu |
 | MetaTrader 5 | [Ultimate Renko indicator generator](https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5) | az-invest.eu |
 | MetaTrader 4 | [Median Renko plug-in](https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4) | az-invest.eu |
 
