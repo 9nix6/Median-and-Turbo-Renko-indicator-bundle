@@ -26,7 +26,7 @@ no need to duplicate the indicator's configuration in the EA's own inputs.
 
 ## Installation
 
-Download the archive from the [latest release](../../releases/latest) — it carries the sources
+Download the archive from the [latest release](https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/releases/latest) — it carries the sources
 *and* the compiled binaries. Copy the `Include`, `Indicators` and `Experts` folders into the
 **`MQL5`** sub-folder of your MetaTrader data folder (*File → Open Data Folder* in the terminal),
 merging them with what is already there, then restart MetaTrader.
@@ -137,7 +137,7 @@ need to change one `#define` and recompile.
 **This repository contains sources only.** Compiled `.ex5` files are not committed — continuous
 integration compiles every source in `Experts/` and `Indicators/MedianRenko/` on each push and pull
 request, failing on any error or warning, and attaches the binaries to each
-[release](../../releases). A release archive's binaries are therefore always built from exactly the
+[release](https://github.com/9nix6/Median-and-Turbo-Renko-indicator-bundle/releases). A release archive's binaries are therefore always built from exactly the
 sources beside them.
 
 So: compile locally with MetaEditor, or download a release if you would rather not.
@@ -146,7 +146,8 @@ So: compile locally with MetaEditor, or download a release if you would rather n
 
 | Platform | Product | Where |
 |---|---|---|
-| MetaTrader 5 | Median and Turbo Renko indicator bundle | [MQL5 Market](https://www.mql5.com/en/market/product/16347) |
+| MetaTrader 5 | Median and Turbo Renko indicator bundle | MQL5 Market |
+| MetaTrader 5 | [P-Renko BR](https://www.az-invest.eu/p-renko-br-for-metatrader-5) | az-invest.eu |
 | MetaTrader 5 | [Ultimate Renko indicator generator](https://www.az-invest.eu/ultimate-renko-indicator-generator-for-metatrader-5) | az-invest.eu |
 | MetaTrader 4 | [Median Renko plug-in](https://www.az-invest.eu/median-renko-plug-in-for-metatrader-4) | az-invest.eu |
 
