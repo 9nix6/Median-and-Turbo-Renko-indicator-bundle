@@ -45,7 +45,7 @@ class CCustomChartSettingsBase : public ICustomChartSettings
       virtual void                  SetCustomChartSettings() {};
       virtual uint                  CustomChartSettingsToFile(int file_handle) {return 0;};
       virtual uint                  CustomChartSettingsFromFile(int file_handle) {return 0;};
-      virtual uint                  CustomChartSettingsSize() {return 0;};
+      virtual uint                  CustomChartSettingsSize() {return 0;};   // 0 = no layout check for this class
       
 };
 
@@ -173,7 +173,10 @@ bool CCustomChartSettingsBase::Load(void)
    uint expectedSize = CustomChartSettingsSize() + sizeof(this.chartIndicatorSettings);
    ulong actualSize = FileSize(handle);
    
-   if(expectedSize > 0 && actualSize != expectedSize)
+   // A settings class that does not override CustomChartSettingsSize() reports 0: its product
+   // struct's size is unknown here, so the comparison would reject every file. 0 means the
+   // layout check is not available for that class, not that the file must be empty.
+   if(CustomChartSettingsSize() > 0 && actualSize != expectedSize)
    {
       PrintFormat("%s: settings file '%s' is %I64u bytes, this build expects %u. "
                   "The indicator and the EA/SDK were built against different settings "
@@ -200,7 +203,7 @@ bool CCustomChartSettingsBase::Load(void)
    // Every byte written must have been consumed. A trailing remainder means the
    // writer put more in the file than this build knows how to read.
    ulong consumed = FileTell(handle);
-   if(consumed != actualSize)
+   if(CustomChartSettingsSize() > 0 && consumed != actualSize)
    {
       PrintFormat("%s: settings file '%s' has %I64u trailing byte(s) after both "
                   "structs were read. The indicator and the EA/SDK disagree on the "
