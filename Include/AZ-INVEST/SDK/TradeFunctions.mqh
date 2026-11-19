@@ -12,6 +12,44 @@ CTradingChecks tradingChecks;
 
 #define POSITION_TYPE_NONE -1
 
+// installer-builder#131 - pure decisions of the order layer, pinned offline by
+// tests/mql/TradePanelTradeMathTest.mq5.
+
+// The filling mode to send with on a symbol whose SYMBOL_FILLING_MODE flags are `symbolFlags`.
+// The configured mode is kept when the symbol allows it; otherwise the same fallback as
+// CTrade::SetTypeFillingBySymbol (FOK, then IOC, then RETURN). A hard-coded FOK used to fail every
+// order with 10030 (unsupported filling) on IOC-only / exchange symbols.
+ENUM_ORDER_TYPE_FILLING FillingForSymbol(const ENUM_ORDER_TYPE_FILLING wanted, const long symbolFlags)
+{
+   if(wanted == ORDER_FILLING_FOK && (symbolFlags & SYMBOL_FILLING_FOK) == SYMBOL_FILLING_FOK)
+      return ORDER_FILLING_FOK;
+   if(wanted == ORDER_FILLING_IOC && (symbolFlags & SYMBOL_FILLING_IOC) == SYMBOL_FILLING_IOC)
+      return ORDER_FILLING_IOC;
+   if(wanted == ORDER_FILLING_RETURN)
+      return ORDER_FILLING_RETURN;
+   if((symbolFlags & SYMBOL_FILLING_FOK) == SYMBOL_FILLING_FOK)
+      return ORDER_FILLING_FOK;
+   if((symbolFlags & SYMBOL_FILLING_IOC) == SYMBOL_FILLING_IOC)
+      return ORDER_FILLING_IOC;
+   return ORDER_FILLING_RETURN;
+}
+
+// Whether a failed request may be sent again AS IS. Only answers that say the order was NOT
+// executed qualify. TIMEOUT and ERROR leave the outcome unknown - the position may exist - so
+// re-sending them is how one click became two positions; REJECT is the server's final word.
+bool IsRetryableTradeRetcode(const uint retcode)
+{
+   switch(retcode)
+   {
+      case TRADE_RETCODE_REQUOTE:
+      case TRADE_RETCODE_PRICE_CHANGED:
+      case TRADE_RETCODE_PRICE_OFF:
+      case TRADE_RETCODE_TOO_MANY_REQUESTS:
+         return true;
+   }
+   return false;
+}
+
 //
 // Positions (market orders)
 //
@@ -26,6 +64,8 @@ struct CMarketOrderParameters
    int                     numberOfRetries;
    int                     busyTimeout_ms; 
    int                     requoteTimeout_ms;   
+   
+   bool                    displayErrorPopus;
 };
 
 class CMarketOrder
@@ -39,6 +79,8 @@ class CMarketOrder
    int                     numberOfRetries;
    int                     busyTimeout_ms; 
    int                     requoteTimeout_ms;   
+   bool                    displayErrorPopus;
+   ENUM_ORDER_TYPE_FILLING wantedFilling;
    
    public:
    
@@ -59,7 +101,7 @@ class CMarketOrder
    bool PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double lots, double price, uint stoploss=0,uint takeprofit=0,bool stopsInPips = true, string comment = "");
    bool PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double lots, double price, double priceSL=0, double priceTP=0, string comment = "");
    
-   bool Modify(ulong ticket, bool stopsInPips = true, int stoploss = -1, int takeprofit = -1);   
+   bool Modify(ulong ticket, bool stopsInPips = true, double stoploss = -1, double takeprofit = -1);   
    bool Modify(ulong ticket, double priceSL=0,double priceTP=0);
 
    bool ModifyPending(ulong ticket, double entry, bool stopsInPips = true, int stoploss = -1, int takeprofit = -1, ENUM_ORDER_TYPE_TIME orderTypeTime = ORDER_TIME_GTC, datetime expires = 0);
@@ -91,13 +133,16 @@ class CMarketOrder
    bool _IsOpen(ulong &ticket, string symbol, ENUM_POSITION_TYPE type, long magicNumber);
    bool _IsOpen(ulong &ticket, string symbol, long magicNumber);
    bool _IsNettingAccount() { return ((ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE) != ACCOUNT_MARGIN_MODE_RETAIL_HEDGING) ? true : false; };
-
+   int MessageBoxConditional(string text, string cation=NULL, int flags=0);
+   void ApplyFilling(string symbol) { ctrade.SetTypeFilling(FillingForSymbol(wantedFilling, SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE))); };
 };
 
 CMarketOrder::CMarketOrder(void)
 {
    ctrade = new CTrade();
    this.initialized = false;
+   this.wantedFilling = ORDER_FILLING_FOK;
+   this.displayErrorPopus = false;
 }
 
 CMarketOrder::CMarketOrder(CMarketOrderParameters &params)
@@ -111,13 +156,15 @@ bool CMarketOrder::Initialize(CMarketOrderParameters &params)
    ctrade.SetExpertMagicNumber(params.m_magic);
    ctrade.SetDeviationInPoints(params.m_deviation);
    ctrade.SetTypeFilling(params.m_type_filling);
+   this.wantedFilling = params.m_type_filling;
    ctrade.SetAsyncMode(params.m_async_mode);
    
    this.numberOfRetries    = (params.numberOfRetries == 0) ? 25 : params.numberOfRetries;
    this.busyTimeout_ms     = (params.busyTimeout_ms == 0) ? 1000 : params.busyTimeout_ms;
    this.requoteTimeout_ms  = (params.requoteTimeout_ms == 0) ? 250 : params.requoteTimeout_ms;
+   this.displayErrorPopus  = params.displayErrorPopus;
    
-   this.initialized = true;
+   this.initialized = true;   
    return this.initialized;
 }
 
@@ -149,7 +196,8 @@ bool CMarketOrder::Long(string symbol, double lots,uint stoploss=0,uint takeprof
       }
       
       //attempt to buy
-      result = ctrade.Buy(NormalizeLots(symbol,lots), symbol, price, priceSL, priceTP, comment);
+      ApplyFilling(symbol);
+      result = ctrade.Buy(NormalizeLots(symbol,lots), symbol, price, (priceSL ? NormalizePrice(symbol,priceSL) : 0.0), (priceTP ? NormalizePrice(symbol,priceTP) : 0.0), comment);
       
       if(result)
       {
@@ -183,7 +231,8 @@ bool CMarketOrder::Long(string symbol, double lots,double priceSL=0,double price
       }
       
       //attempt to buy
-      result = ctrade.Buy(NormalizeLots(symbol,lots), symbol, price, priceSL, priceTP, comment);
+      ApplyFilling(symbol);
+      result = ctrade.Buy(NormalizeLots(symbol,lots), symbol, price, (priceSL ? NormalizePrice(symbol,priceSL) : 0.0), (priceTP ? NormalizePrice(symbol,priceTP) : 0.0), comment);
       
       if(result)
       {
@@ -222,7 +271,8 @@ bool CMarketOrder::Short(string symbol, double lots,uint stoploss=0,uint takepro
       }
             
       //attempt to sell
-      result = ctrade.Sell(NormalizeLots(symbol,lots), symbol, price, priceSL, priceTP, comment);
+      ApplyFilling(symbol);
+      result = ctrade.Sell(NormalizeLots(symbol,lots), symbol, price, (priceSL ? NormalizePrice(symbol,priceSL) : 0.0), (priceTP ? NormalizePrice(symbol,priceTP) : 0.0), comment);
       
       if(result)
       {
@@ -256,7 +306,8 @@ bool CMarketOrder::Short(string symbol, double lots,double priceSL=0,double pric
       }
    
       //attempt to sell
-      result = ctrade.Sell(NormalizeLots(symbol,lots), symbol, price, priceSL, priceTP, comment);
+      ApplyFilling(symbol);
+      result = ctrade.Sell(NormalizeLots(symbol,lots), symbol, price, (priceSL ? NormalizePrice(symbol,priceSL) : 0.0), (priceTP ? NormalizePrice(symbol,priceTP) : 0.0), comment);
 
       if(result)
       {
@@ -295,9 +346,9 @@ bool CMarketOrder::PendingLong(ENUM_ORDER_TYPE orderType, string symbol, double 
             
       //attempt to place buy
       if(orderType == ORDER_TYPE_BUY_LIMIT)
-         result = ctrade.BuyLimit(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.BuyLimit(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       else if(orderType == ORDER_TYPE_BUY_STOP)
-         result = ctrade.BuyStop(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.BuyStop(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       
       if(result)
       {
@@ -307,7 +358,7 @@ bool CMarketOrder::PendingLong(ENUM_ORDER_TYPE orderType, string symbol, double 
       else
       {
         string err = ctrade.ResultRetcodeDescription();
-        MessageBox(err,"Operation failed",MB_ICONEXCLAMATION);
+        MessageBoxConditional(err,"Operation failed",MB_ICONEXCLAMATION);
         return false;
       }         
    }
@@ -330,9 +381,9 @@ bool CMarketOrder::PendingLong(ENUM_ORDER_TYPE orderType, string symbol, double 
       
       //attempt to buy
       if(orderType == ORDER_TYPE_BUY_LIMIT)
-         result = ctrade.BuyLimit(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.BuyLimit(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       else if(orderType == ORDER_TYPE_BUY_STOP)
-         result = ctrade.BuyStop(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.BuyStop(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       
       if(result)
       {
@@ -342,7 +393,7 @@ bool CMarketOrder::PendingLong(ENUM_ORDER_TYPE orderType, string symbol, double 
       else
       {
          string err = ctrade.ResultRetcodeDescription();
-         MessageBox(err,"Operation failed",MB_ICONEXCLAMATION);
+         MessageBoxConditional(err,"Operation failed",MB_ICONEXCLAMATION);
          return false;
       }         
    }
@@ -372,9 +423,9 @@ bool CMarketOrder::PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double
       
       //attempt to sell
       if(orderType == ORDER_TYPE_SELL_LIMIT)
-         result = ctrade.SellLimit(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.SellLimit(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       else if(orderType == ORDER_TYPE_SELL_STOP)
-         result = ctrade.SellStop(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.SellStop(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       
       if(result)
       {
@@ -384,7 +435,7 @@ bool CMarketOrder::PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double
       else
       {
         string err = ctrade.ResultRetcodeDescription();
-        MessageBox(err,"Operation failed",MB_ICONEXCLAMATION);
+        MessageBoxConditional(err,"Operation failed",MB_ICONEXCLAMATION);
         return false;
       }         
    }
@@ -407,9 +458,9 @@ bool CMarketOrder::PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double
       
       //attempt to sell
       if(orderType == ORDER_TYPE_SELL_LIMIT)
-         result = ctrade.SellLimit(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.SellLimit(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
       else if(orderType == ORDER_TYPE_SELL_STOP)
-         result = ctrade.SellStop(NormalizeLots(symbol,lots),price,symbol,priceSL,priceTP,ORDER_TIME_GTC,0,comment);
+         { ApplyFilling(symbol); result = ctrade.SellStop(NormalizeLots(symbol,lots),NormalizePrice(symbol,price),symbol,(priceSL ? NormalizePrice(symbol,priceSL) : 0.0),(priceTP ? NormalizePrice(symbol,priceTP) : 0.0),ORDER_TIME_GTC,0,comment); }
 
       if(result)
       {
@@ -419,7 +470,7 @@ bool CMarketOrder::PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double
       else
       {
          string err = ctrade.ResultRetcodeDescription();
-         MessageBox(err,"Operation failed",MB_ICONEXCLAMATION);
+         MessageBoxConditional(err,"Operation failed",MB_ICONEXCLAMATION);
          return false;
       }         
    }
@@ -427,7 +478,7 @@ bool CMarketOrder::PendingShort(ENUM_ORDER_TYPE orderType, string symbol, double
    return false;    
 }
 
-bool CMarketOrder::Modify(ulong ticket, bool stopsInPips = true, int stoploss = -1, int takeprofit = -1)
+bool CMarketOrder::Modify(ulong ticket, bool stopsInPips = true, double stoploss = -1, double takeprofit = -1)
 {
    if(!PositionSelectByTicket(ticket))
       return false;
@@ -704,6 +755,7 @@ bool CMarketOrder::Close(ulong ticket)
    
    while(!IsStopped() && !result)
    {
+      if(PositionSelectByTicket(ticket)) ApplyFilling(PositionGetString(POSITION_SYMBOL));
       result = ctrade.PositionClose(ticket);
       
       if(result)
@@ -750,6 +802,7 @@ bool CMarketOrder::ClosePartial(ulong ticket, double lots)
       }
       else // Hedging account type
       {
+         if(PositionSelectByTicket(ticket)) ApplyFilling(PositionGetString(POSITION_SYMBOL));
          result = ctrade.PositionClosePartial(ticket, lots);
       }
          
@@ -873,12 +926,16 @@ bool CMarketOrder::CloseAll(string symbol = "")
    }   
    
    ArrayResize(ticketsToClose,ticketsToCloseCounter);   
+   // True only if every selected position closed (installer-builder#131: it used to report success
+   // whatever happened).
+   int closed = 0;
    for(int i=0;i<ticketsToCloseCounter;i++)
    {
-      this.Close(ticketsToClose[i]);
+      if(this.Close(ticketsToClose[i]))
+         closed++;
    }   
    
-   return true;
+   return (ticketsToCloseCounter > 0 && closed == ticketsToCloseCounter);
 }
 
 bool CMarketOrder::IsOpen(ulong &ticket,ENUM_POSITION_TYPE &type,string symbol,long magicNumber=0)
@@ -1059,31 +1116,18 @@ bool CMarketOrder::RetryOrderRequest(int retryNumber)
       return false;
    }
       
-   switch(ctrade.ResultRetcode())
+   uint retcode = ctrade.ResultRetcode();
+   if(!IsRetryableTradeRetcode(retcode))
    {
-      case TRADE_RETCODE_REQUOTE           :
-
-         Sleep(this.requoteTimeout_ms);
-         return true;
-               
-      break;
-
-      case TRADE_RETCODE_REJECT            :
-      case TRADE_RETCODE_ERROR             :
-      case TRADE_RETCODE_TIMEOUT           :
-      case TRADE_RETCODE_PRICE_OFF         :
-      case TRADE_RETCODE_TOO_MANY_REQUESTS :
-
-         Sleep(this.busyTimeout_ms);
-         return true;
-   
-      break;
-      
-      default:
-         MessageBox(ctrade.ResultRetcodeDescription(),"Operation failed",MB_ICONEXCLAMATION);
-         return false;
+      if(retcode == TRADE_RETCODE_TIMEOUT || retcode == TRADE_RETCODE_ERROR)
+         MessageBoxConditional(ctrade.ResultRetcodeDescription()+"\n\nThe request may still have been executed - check your positions and orders before trying again.","Operation result unknown",MB_ICONEXCLAMATION);
+      else
+         MessageBoxConditional(ctrade.ResultRetcodeDescription(),"Operation failed",MB_ICONEXCLAMATION);
+      return false;
    }
 
+   Sleep((retcode == TRADE_RETCODE_REQUOTE || retcode == TRADE_RETCODE_PRICE_CHANGED) ? this.requoteTimeout_ms : this.busyTimeout_ms);
+   return true;
 }
 
 void CMarketOrder::SetTradeId(ulong tradeId)
@@ -1091,3 +1135,11 @@ void CMarketOrder::SetTradeId(ulong tradeId)
    ctrade.SetExpertMagicNumber(tradeId);
 }
 
+int CMarketOrder::MessageBoxConditional(string text, string caption=NULL, int flags=0)
+{
+   if(displayErrorPopus)
+      return MessageBox(text, caption, flags);
+      
+   Print(text);
+   return 0;
+}
