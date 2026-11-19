@@ -78,14 +78,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # MT5 is installed into the workspace and kept between runs, so only the
-      # first run on a fresh runner pays the download. Same approach as
-      # TradingAssistant-VTC4's mql-compile job, which already works on this VM.
+      # MT5 lives in the runner's tool cache, OUTSIDE the workspace, so it is kept
+      # between runs and only the first run on a fresh runner pays the download.
+      # It used to be installed into the workspace, where checkout's default
+      # `git clean -ffdx` removed it before this step on every build: each build
+      # then depended on download.mql5.com and on the silent installer, and
+      # installers started together by several runners on the one VM could exit
+      # without installing (#39).
       - name: Ensure MetaTrader 5 is installed
         run: |
           $ErrorActionPreference = "Stop"
-          $mt5Dir = Join-Path $PWD "mt5"
+          $mt5Dir = Join-Path $env:RUNNER_TOOL_CACHE "mt5-mql-build"
           $metaEditor = Join-Path $mt5Dir "metaeditor64.exe"
+          "MT5_DIR=$mt5Dir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           if (Test-Path $metaEditor) {
             Write-Host "MetaEditor already present: $metaEditor"
@@ -136,7 +141,7 @@ jobs:
         id: compile
         run: |
           $ErrorActionPreference = "Stop"
-          $mt5Dir  = Join-Path $PWD "mt5"
+          $mt5Dir  = $env:MT5_DIR
           $metaEditor = Join-Path $mt5Dir "metaeditor64.exe"
           $mql5    = Join-Path $mt5Dir "MQL5"
           $out     = Join-Path $PWD "compiled"
@@ -179,6 +184,14 @@ jobs:
               New-Item -ItemType Directory -Path $target -Force | Out-Null
             }
 
+            # The install outlives the build, so whatever an earlier build staged
+            # into MQL5\Include is still there. Remove this repository's own
+            # entries before copying, or a header deleted from the repository
+            # would keep resolving. The platform's own includes are left alone.
+            foreach ($entry in Get-ChildItem -Path "Include") {
+              $stale = Join-Path (Join-Path $mql5 "Include") $entry.Name
+              if (Test-Path $stale) { Remove-Item $stale -Recurse -Force }
+            }
             Copy-Item -Path "Include\*" -Destination (Join-Path $mql5 "Include") -Recurse -Force
             Copy-Item -Path "Indicators\MedianRenko\*" -Destination (Join-Path $mql5 "Indicators\MedianRenko") -Recurse -Force
             Copy-Item -Path "Experts\*" -Destination (Join-Path $mql5 "Experts") -Recurse -Force
