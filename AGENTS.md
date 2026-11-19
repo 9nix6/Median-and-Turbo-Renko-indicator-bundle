@@ -56,8 +56,10 @@ That table is resolved in the `#ifdef` ladder at the **top of
 
 **Sibling product lines** (Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line Break)
 are referenced by `#ifdef` in `CustomBarConfig.mqh`, `Experts/2MA_Cross.mq5` and
-`Experts/PriceMA_Cross.mq5`, but **their headers are not in this repo** — they ship with
-those separate products. Uncommenting those defines here will not compile.
+`Experts/PriceMA_Cross.mq5`, but **their headers are not in this repo**. Uncommenting those defines here will not
+compile. The headers live in the public sibling SDK repositories (`X-Tick-Chart`,
+`Range-Bars-Charting`, `Seconds-timeframe-chart`), which take this repository's shared code
+through their own `tools/sync_from_bundle.py`, pinned to a commit here.
 
 ## Symptom → where to look
 
@@ -112,9 +114,10 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
 
 ## Build & deploy (not obvious)
 
-- **No makefile, no CI-for-release, no script.** `.mq5` is compiled by **MetaEditor**
+- **No makefile and no local build script.** `.mq5` is compiled by **MetaEditor**
   (bundled with MT5, Windows only) — F7, or `metaeditor64.exe /compile:...` headless.
   There is no macOS/Linux MQL5 compiler; do not attempt to build from this checkout.
+  CI does the compiling and the release packaging — see the CI section below.
 - **Include resolution is by MT5 data folder, not by repo layout.** `<AZ-INVEST/...>`
   resolves against `<MT5 data folder>/MQL5/Include/`. The repo's top-level `Experts/`,
   `Include/`, `Indicators/` mirror `MQL5/Experts`, `MQL5/Include`, `MQL5/Indicators`
@@ -129,7 +132,7 @@ bar-engine question; "my EA can't read the chart's settings" is *this* repo.
 
 ## Known risk
 
-**The `.set` handshake has no version field.** `Load()` rejects a settings file whose
+**The `.set` handshake has no version field.** `Load()` rejects
 a settings file whose size does not match the structs this build expects, which catches any layout
 change that adds, removes or retypes a field. A *same-size reordering* is still undetectable — that
 needs a version field in the file, and the writer is the closed-source indicator, so it cannot be

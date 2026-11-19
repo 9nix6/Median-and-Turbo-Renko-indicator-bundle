@@ -2,7 +2,8 @@
 
 Parent: [`../AGENTS.md`](../AGENTS.md) · shim internals: [`../Include/AGENTS.md`](../Include/AGENTS.md)
 
-One subfolder, `MedianRenko/`, holding **64 `.mq5` indicators plus their committed `.ex5`**.
+One subfolder, `MedianRenko/`, holding **64 `.mq5` indicators**. Binaries are not committed (`.ex5` is
+gitignored); CI compiles them and attaches them to releases.
 These are stock MetaQuotes and community MT5 indicators that have been *patched* to read
 Renko bricks instead of the chart's own bars. They are not original work and not the
 product — they are a convenience bundle shipped with it.

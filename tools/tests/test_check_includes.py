@@ -18,8 +18,8 @@ def load():
 
 
 class ReadSource(unittest.TestCase):
-    """~a third of this tree is UTF-16LE; read it as UTF-8 and every #include
-    line becomes invisible, which is how the TradeHistory bug survived."""
+    """A third of this tree used to be UTF-16LE; read as UTF-8, every #include
+    line of such a file is invisible, which is how the TradeHistory bug survived."""
 
     def setUp(self):
         self.m = load()
