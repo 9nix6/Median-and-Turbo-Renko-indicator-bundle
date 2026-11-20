@@ -175,9 +175,12 @@ so `Include/smoothalgorithms.mqh` is included as `<smoothalgorithms.mqh>`, not
 **2. `Compile (MetaEditor)`** — `runs-on: [self-hosted, Windows, mql]`
 - The Windows 11 UTM VM on the Mac Mini. MetaEditor is Windows-only, so there is nowhere else this
   can run; the VM already hosts the per-repo runners for the sibling repos.
-- MT5 is installed into the workspace on first run and kept, then the terminal is run once so the
-  standard includes (`Trade/`, `Arrays/`, `Generic/`) exist.
-- **The repo is staged into `mt5\MQL5\` before compiling** — `Include\*` into `MQL5\Include`,
+- MT5 is installed into the runner's tool cache (`$RUNNER_TOOL_CACHE\mt5-mql-build`) on first run
+  and kept, then the terminal is run once so the standard includes (`Trade/`, `Arrays/`,
+  `Generic/`) exist. It is deliberately outside the workspace: checkout cleans the workspace on
+  every build, which is how a workspace install came to be re-downloaded each time (#39). Nothing
+  updates that install; delete the folder on the runner to get a fresh one.
+- **The repo is staged into that install's `MQL5\` before compiling** — `Include\*` into `MQL5\Include`,
   `Indicators\MedianRenko` and `Experts\*` into their counterparts. This is load-bearing:
   MetaEditor resolves `<…>` against the data folder's `Include`, so it is the only arrangement
   where `<AZ-INVEST/SDK/MedianRenko.mqh>` and `<Trade/Trade.mqh>` both resolve in one build.
