@@ -31,6 +31,7 @@ class CTimeControl
       void SetValidTraingHours(bool _unused, string _timeSpan = "0:00-0:00");
       bool IsTradingTimeValid();
       bool IsScheduleEnabled() { return scheduleEnabled; };
+      bool IsPastTime(string value);
       void UpdateSessionDateTime(int addSecods = 0); 
       datetime GetSessionStartTime() { return startOfSession; };
       datetime GetSessionEndTime() { return endOfSession; };
@@ -118,6 +119,22 @@ bool CTimeControl::IsTradingTimeValid()
       return false;
 }
 
+bool CTimeControl::IsPastTime(string value)
+{
+   datetime now = TimeCurrent();
+   
+   MqlDateTime temp;
+   TimeToStruct(now,temp);
+   
+   datetime timeCheck = StringToTime((string)temp.year+"."+(string)temp.mon+"."+(string)temp.day+" "+value); 
+   
+   if(timeCheck <= now)
+      return true;
+   else
+      return false;
+}
+
+
 string CTimeControl::ToString()
 {
    string tradingScheduleName = "Trading schedule ";
@@ -158,7 +175,7 @@ bool CTimeControl::StringToHHMMRange(string value, int &_startHH, int &_startMM,
       return false;
 
    MqlDateTime temp;
-   TimeToStruct(TimeCurrent(),temp);
+   TimeToStruct(TimeCurrent(),temp);   
    
    // Start time
    _start = result[0];
