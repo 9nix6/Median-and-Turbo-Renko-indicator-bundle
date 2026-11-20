@@ -233,6 +233,43 @@ jobs:
               # something it had to guess at. Left to accumulate they stop being
               # read, and the one that matters arrives invisible among them.
               if ($errors -gt 0 -or $warnings -gt 0) { $failed = 1 }
+
+              # MetaEditor sometimes leaves a file out of both its count and its
+              # log while still producing the binary (seen repeatedly for the
+              # last indicator of the second edition, issue #36). Errors and
+              # warnings are found by reading the log, so such a file would pass
+              # unread. Every source without a "compiling" entry is therefore
+              # compiled again on its own, and that log is read instead.
+              $logText = if (Test-Path $log) { "$text" } else { "" }
+              $unlogged = @(Get-ChildItem -Path $dir -Recurse -Include *.mq5, *.mq4 | Where-Object {
+                $logText.IndexOf("information: compiling " + $_.FullName, [System.StringComparison]::OrdinalIgnoreCase) -lt 0
+              })
+              foreach ($src in $unlogged) {
+                $oneLog = Join-Path $PWD ("compile-$name-single-" + $src.BaseName + ".log")
+                Write-Host "::group::$name / $target / $($src.Name) (not in the directory log, compiled again)"
+                Start-Process -FilePath $metaEditor `
+                  -ArgumentList "/compile:`"$($src.FullName)`"", "/inc:`"$mql5`"", "/log:`"$oneLog`"" `
+                  -PassThru -NoNewWindow -Wait | Out-Null
+                $oneText = ""
+                if (Test-Path $oneLog) {
+                  $oneText = Get-Content $oneLog -Encoding Unicode -Raw
+                  if (-not $oneText) { $oneText = Get-Content $oneLog -Raw }
+                }
+                Write-Host $oneText
+                Write-Host "::endgroup::"
+                $oneErrors = ([regex]::Matches("$oneText", "(?m):\s*error\s")).Count
+                $oneWarnings = ([regex]::Matches("$oneText", "(?m):\s*warning\s")).Count
+                $read = "$oneText".IndexOf("information: compiling " + $src.FullName, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+                Write-Host "$name / $target / $($src.Name) -- compiled again: $oneErrors error(s), $oneWarnings warning(s)"
+                if (-not $read) {
+                  Write-Host "::error::$($src.Name): no compile log even when compiled on its own."
+                  $failed = 1
+                }
+                if ($oneErrors -gt 0 -or $oneWarnings -gt 0) { $failed = 1 }
+              }
+              if ($unlogged.Count -eq 0) {
+                Write-Host "$name / $target -- every source has a compile entry in the log."
+              }
             }
 
             # --- collect -----------------------------------------------------
