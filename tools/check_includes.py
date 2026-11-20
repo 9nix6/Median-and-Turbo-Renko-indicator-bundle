@@ -1,15 +1,18 @@
 """Resolve every #include <...> in this repository against what it ships.
 
-Why this exists: nothing here compiles in CI (the runner has no MetaTrader), so
-a wrong include path can sit in the tree indefinitely --
+Why this exists: before the Compile (MetaEditor) job nothing here compiled in
+CI, so a wrong include path could sit in the tree indefinitely --
 Indicators/MedianRenko/TradeHistory.mq5 asked for <AZ-INVEST/Double.mqh> while
-the repo ships Include/Double.mqh, and no clean checkout of that indicator had
-compiled since. Resolving includes needs no compiler, so it can gate every push.
+the repo shipped Include/Double.mqh, and no clean checkout of that indicator had
+compiled since. The compile job catches that now, but it needs the Windows
+runner and minutes; resolving includes needs no compiler, so it gates every push
+on a hosted runner first, in seconds.
 
 Two traps this deliberately handles, because a naive grep gets both wrong:
 
-  * ~a third of the sources are UTF-16LE, so plain grep/git grep never sees
-    their #include lines at all.
+  * MetaEditor saves UTF-16LE by default, and plain grep/git grep never sees
+    the #include lines of such a file at all. Every source here is UTF-8 with a
+    BOM today; a file saved back as UTF-16 is still read correctly, and reported.
   * MQL is a Windows language: include paths use either slash, and the platform
     treats them case-insensitively. Comparisons here are normalised the same way.
 
