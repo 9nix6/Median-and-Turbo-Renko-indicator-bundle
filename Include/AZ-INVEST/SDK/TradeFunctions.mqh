@@ -780,6 +780,26 @@ bool CMarketOrder::ClosePartial(ulong ticket, double lots)
    
    string symbol = PositionGetString(POSITION_SYMBOL);
    
+   // The server refuses a volume that is off the symbol's step ("Invalid volume"), so the request
+   // is rounded DOWN to the step first: never more than was asked for, and never more than the
+   // position holds. NormalizeLots() is not used here because it raises a volume below the
+   // minimum up to the minimum, which for a close would take off more than the caller asked.
+   double step       = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
+   double minLot     = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double positionLots = PositionGetDouble(POSITION_VOLUME);
+   double requested  = lots;
+   
+   if(step > 0)
+      lots = NormalizeDouble(MathFloor(lots / step + 1e-7) * step, VolumeStepDigits(step));
+   if(lots > positionLots)
+      lots = positionLots;
+   if(lots <= 0 || lots < minLot)
+   {
+      Print("ClosePartial: ", DoubleToString(requested, 8), " lots is below the smallest volume ",
+            symbol, " can close (", DoubleToString(minLot, VolumeStepDigits(step)), "); nothing closed.");
+      return false;
+   }
+   
    bool result = false;
    int counter = 0;
    
