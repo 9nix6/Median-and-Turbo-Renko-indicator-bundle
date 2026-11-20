@@ -69,6 +69,18 @@ then recompile (**F7**). The full mapping:
 > A mismatch here means `iCustom()` is asking for an indicator you do not have installed, which
 > produces an empty chart rather than an error message.
 
+**The EAs have their own switch.** `CustomBarConfig.mqh` is read by the indicators only; an EA does
+not include it. Each EA in `Experts/` has this line near the top, commented by default:
+
+```c
+//#define ULTIMATE_RENKO_LICENSE
+```
+
+Leave it commented for the MQL5 Market edition. For Ultimate Renko from az-invest.eu, uncomment it
+and recompile; otherwise the EA fails to start and the Strategy Tester reports
+`cannot load custom indicator 'Market\Median and Turbo renko indicator bundle' [4802]`. The
+release archive for each edition already has the line set to match.
+
 Editions for the sibling products — Range Bars, Tick Chart, Volume Chart, Seconds Chart, Line
 Break — are selected by the remaining `#define`s in the same file, but their headers ship with
 those products and are not included here.

@@ -132,6 +132,12 @@ jobs:
       # CustomBarConfig.mqh. Each edition is therefore compiled separately, and
       # each release ships the sources with the define already set to match its
       # own binaries -- so a customer who recompiles gets what was shipped.
+      #
+      # The EAs do not include CustomBarConfig.mqh. Each one picks the indicator
+      # name from its own ULTIMATE_RENKO_LICENSE line, which is commented in the
+      # repository (the MQL5 Market default). For the other edition that line is
+      # uncommented in the staged copy before compiling; without it the EA
+      # binaries of both editions ask for the Market indicator (issue #46).
       - name: Compile both editions
         id: compile
         run: |
@@ -183,6 +189,33 @@ jobs:
             Copy-Item -Path "Indicators\MedianRenko\*" -Destination (Join-Path $mql5 "Indicators\MedianRenko") -Recurse -Force
             Copy-Item -Path "Experts\*" -Destination (Join-Path $mql5 "Experts") -Recurse -Force
 
+            # The EA's own edition line (see the comment above this step). Read
+            # and written as bytes-with-encoding so the BOM and CRLF survive.
+            # An EA without the line would silently stay on the Market
+            # indicator, so that is an error rather than a skip.
+            $eaDefine = 'ULTIMATE_RENKO_LICENSE'
+            $stagedEas = Get-ChildItem -Path (Join-Path $mql5 "Experts") -Recurse -Include *.mq5
+            foreach ($ea in $stagedEas) {
+              $bytes  = [System.IO.File]::ReadAllBytes($ea.FullName)
+              $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+              $eaText = [System.IO.File]::ReadAllText($ea.FullName)
+              $commented = [regex]::Matches($eaText, "(?m)^//#define $eaDefine\b").Count
+              $enabled   = [regex]::Matches($eaText, "(?m)^#define $eaDefine\b").Count
+              if ($edition.Market) {
+                if ($commented -ne 1 -or $enabled -ne 0) {
+                  throw "$($ea.Name): expected one commented '//#define $eaDefine' line (the Market default), found $commented commented and $enabled enabled."
+                }
+              } else {
+                if ($commented -ne 1 -or $enabled -ne 0) {
+                  throw "$($ea.Name): no single '//#define $eaDefine' line to enable for the $name edition (found $commented commented, $enabled enabled)."
+                }
+                $eaText = [regex]::Replace($eaText, "(?m)^//#define $eaDefine\b", "#define $eaDefine")
+                [System.IO.File]::WriteAllText($ea.FullName, $eaText, (New-Object System.Text.UTF8Encoding $hasBom))
+              }
+            }
+            $eaState = if ($edition.Market) { "//#define $eaDefine" } else { "#define $eaDefine" }
+            Write-Host "Experts: $eaState in $($stagedEas.Count) EA(s)."
+
             # A binary left from the previous edition would be collected as if
             # this edition had produced it.
             Get-ChildItem -Path (Join-Path $mql5 "Indicators\MedianRenko"), (Join-Path $mql5 "Experts") `
@@ -225,6 +258,24 @@ jobs:
               }
               Write-Host "::endgroup::"
 
+              # MetaEditor names the indicator an EA loads in a tester_indicator
+              # line. That is the only place the compiled edition of an EA shows,
+              # so it is checked here: Market EAs must ask for the Market
+              # indicator and the other edition's must not.
+              if ($target -eq "Experts" -and (Test-Path $log)) {
+                $asked = [regex]::Matches($text, 'tester_indicator "([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
+                $marketAsked = @($asked | Where-Object { $_ -like 'Market\*' })
+                Write-Host "$name / Experts -- indicators asked for: $((@($asked) | Sort-Object -Unique) -join ', ')"
+                if ($edition.Market -and $marketAsked.Count -eq 0) {
+                  Write-Host "::error::${name}: no EA asks for the Market indicator."
+                  $failed = 1
+                }
+                if (-not $edition.Market -and $marketAsked.Count -gt 0) {
+                  Write-Host "::error::${name}: $($marketAsked.Count) EA reference(s) to the Market indicator in the non-Market edition."
+                  $failed = 1
+                }
+              }
+
               # MetaEditor's exit code is the number of files it compiled, not
               # an error count -- a successful directory build exits non-zero.
               Write-Host "$name / $target -- $code file(s) compiled, $errors error(s), $warnings warning(s)"
@@ -246,6 +297,10 @@ jobs:
             # CustomBarConfig.mqh in a release archive is the one its binaries
             # were built from rather than a copy edited again later.
             Copy-Item -Path $config -Destination "$out\$name\CustomBarConfig.mqh" -Force
+
+            # Same for the EA sources: the edition line as compiled.
+            Get-ChildItem -Path (Join-Path $mql5 "Experts") -Filter *.mq5 -Recurse |
+              Copy-Item -Destination "$out\$name\Experts" -Force
 
             $built = (Get-ChildItem -Path "$out\$name" -Recurse -Include *.ex5).Count
             Write-Host "${name}: produced $built binary file(s)."
@@ -346,6 +401,19 @@ jobs:
               grep -q '^//#define MQL5_MARKET_VERSION' "$dir/Include/AZ-INVEST/CustomBarConfig.mqh" \
                 || { echo "::error::$label: MQL5_MARKET_VERSION is not disabled in the packaged config."; exit 1; }
             fi
+
+            # The EA sources come from the compile job too (copied above with
+            # the binaries), so their edition line has to match the archive.
+            local ea
+            for ea in "$dir"/Experts/*.mq5; do
+              if [ "$edition" = "market" ]; then
+                grep -q '^//#define ULTIMATE_RENKO_LICENSE' "$ea" \
+                  || { echo "::error::$label: $(basename "$ea") does not have ULTIMATE_RENKO_LICENSE commented."; exit 1; }
+              else
+                grep -q '^#define ULTIMATE_RENKO_LICENSE' "$ea" \
+                  || { echo "::error::$label: $(basename "$ea") does not have ULTIMATE_RENKO_LICENSE enabled."; exit 1; }
+              fi
+            done
 
             (cd "$dir" && zip -qr "../$zip" .)
             echo "$label: $count binaries -> $zip"
