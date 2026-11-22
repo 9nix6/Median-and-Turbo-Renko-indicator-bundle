@@ -100,16 +100,18 @@ and "activation" hits are MT5 *pending-order activation price* checks in
 `TradingChecks.mqh`). `*_LICENSE` defines here are **edition switches**, not licence
 enforcement — they only pick which indicator name/ chart name string to use.
 
-Activation lives in the sibling repos, and a support agent should route there:
+Activation lives in the private `az-invest-eu` organisation, and a support agent should route there:
 
-- `../AzInvestSales_Azure` — serves activation over HTTP (order/seat lookup).
-- `../AzInvestProducts_Lock` — the licence-protection side that the closed-source
+- `az-invest-eu/activation` — the activation apps (`Activate`, `ActivationManager.exe`, which
+  the customer actually runs) and the server that answers them (order/seat lookup).
+- `az-invest-eu/product-locks` — the licence-protection side that the closed-source
   products are built against.
-- `../installer-builder` — ships the Windows installers and `ActivationManager.exe` that
-  the customer actually runs.
+- `az-invest-eu/packaging` — builds the Windows installers.
+- `az-invest-eu/indicators` — the product source, including the copy of this SDK the
+  installers ship (`mql/Shared`).
 
-So "the indicator won't activate" is an `AzInvestSales_Azure` / `AzInvestProducts_Lock` /
-`installer-builder` question; "the indicator activated but the chart is blank" is a
+So "the indicator won't activate" is an `activation` / `product-locks` /
+`packaging` question; "the indicator activated but the chart is blank" is a
 bar-engine question; "my EA can't read the chart's settings" is *this* repo.
 
 ## Build & deploy (not obvious)
