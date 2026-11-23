@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Publish a release with this version (e.g. 3.19.5). Leave empty to build only."
+        description: "Publish a release with this version (e.g. 3.45). Leave empty to build only."
         type: string
         required: false
       release_notes:
@@ -529,7 +529,7 @@ jobs:
           echo "Publishing $version ${prerelease:-as a full release}"
 
           gh release create "$version" $prerelease \
-            --title "Median Renko EA for renko indicator version 3.19+" \
+            --title "Median Renko EA for renko indicator version ${version}+" \
             --notes-file release-notes.md \
             --target "${GITHUB_SHA}" \
             "MedianRenko-SDK-$version-MQL5-Market.zip" \
